@@ -4,14 +4,40 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title><%= htmlWebpackPlugin.options.title %></title>
+    <meta name="keywords" content="動物,タイピングゲーム,動物タイピングゲーム,動物園,珍しい動物,動物タイピング,タイピング,動物名暗記">
+    <meta name=“description” content=“タイピングゲームをしながら楽しく動物の名前を覚えよう。タイピングをマスターしたときには、動物マスターになっているはず…”>
+    
+    <link rel="shortcut icon" href="favicon.ico">
+    <title>動物タイピングゲーム</title>
+    <!-- <link rel="stylesheet" href="https://unpkg.com/@coreui/coreui/dist/css/coreui.min.css"> -->
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+
+      body {
+        font-family: 'Kosugi Maru', sans-serif;
+      }
+    </style>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-212014227-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-212014227-1');
+</script>
+
   </head>
-  <body>
+  <body class="c-app">
     <noscript>
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9272071972213075"
+     crossorigin="anonymous"></script>
+    <!-- <script src="https://unpkg.com/@coreui/coreui/dist/js/coreui.min.js"></script> -->
   </body>
 </html>
+
