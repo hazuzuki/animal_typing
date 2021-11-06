@@ -25,10 +25,23 @@
         font-family: 'Kosugi Maru', sans-serif;
       }
 
-      .admax-side {
-        margin-top: 50px;
-        text-align: center;
+        .wrapper{
+        min-height: 100vh;
+        position: relative;
       }
+
+        .admax-side {
+          width: 100%;
+          position: absolute;
+          bottom: 0; 
+        }
+
+        @media screen and (min-width: 601px) {
+          .admax-side {
+            text-align: center;
+          }
+}
+
     </style>
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-212014227-1"></script>
@@ -39,11 +52,10 @@
       gtag('config', 'UA-212014227-1');
     </script>
   </head>
-  <body class="c-app">
+  <body class="c-app wrapper">
     <noscript>
       <strong>タイピングゲームをしながら楽しく動物の名前を覚えよう。タイピングをマスターしたときには、動物マスターになっているはず…" </strong>
     </noscript>
-    <h1>こんにちは</h1>
     <div id="app" class="container"></div>
     <div class="admax-side">
       <!-- admax -->

@@ -1,8 +1,15 @@
 <template>
   <div>
-    <header>
-        <div class="title">動物タイピングゲーム</div>
+    <header class="header_pc" v-if="$mq === 'pc'">
+        <div v-if="$mq === 'pc'">
+            <div class="title_pc">動物タイピングゲーム</div>
+        </div>
     </header>
+    <header class="header_sp" v-if="$mq === 'sp'">
+        <div v-if="$mq === 'sp'">
+            <div class="title_sp">動物タイピングゲーム</div>         
+        </div> 
+    </header>  
     <typingtop v-show="currentComponent === 'typingtop'"></typingtop>
     <typingstart v-show="currentComponent === 'typingstart'" :kata="kata" :roman="roman" :PassSec="PassSec" :num="num" @RandomWord="RandomWord" @SendSumCount="SendSumCount2" ref="foo"></typingstart>
     <typingresult v-show="currentComponent === 'typingresult'" :sumcount="sumcount"></typingresult>
@@ -91,17 +98,31 @@ body {
     background-color: #f0d47f;
 }
 
-header {
+.header_pc {
     height: 60px;
     background-color: green;
     align-items: center;
     padding: 15px;
 }
 
-.title {
+.header_sp {
+    height: 40px;
+    background-color: green;
+    align-items: center;
+    padding: 10px;    
+}
+
+.title_pc {
     font-size: 30px;
     color: white;
     height: 40px;
+    text-align: left;
+}
+
+.title_sp {
+    font-size: 20px;
+    color: white;
+    height: 20px;
     text-align: left;
 }
 
