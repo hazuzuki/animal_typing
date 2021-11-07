@@ -20,8 +20,10 @@ export default {
       audio: new Audio(require('@/assets/Quiz-Correct_Answer02-1.mp3')),
       buzzeraudio: new Audio(require('@/assets/Quiz-Wrong_Buzzer02-1.mp3')),
       count: 0,
+      misscount: 0,
       roman2: this.roman,
       pressed: "",
+      typed_animal: [],
       }
   },
   methods: {
@@ -35,15 +37,21 @@ export default {
           this.roman2 = this.roman;
           this.count += 1;
           this.audio.play();
+          this.typed_animal.push(this.num);
           this.SendSumCount();
         }
       } else {
         this.buzzeraudio.play();
+        this.misscount += 1;
       }
       return true
   },
   SendSumCount: function() {
      this.$emit('SendSumCount', this.count);
+     this.$emit('TypedAnimal', this.typed_animal);
+     this.$emit('MissCount', this.misscount);
+
+
   },
   },
 watch: {

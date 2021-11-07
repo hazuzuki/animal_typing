@@ -8,11 +8,11 @@
     <header class="header_sp" v-if="$mq === 'sp'">
         <div v-if="$mq === 'sp'">
             <div class="title_sp">動物タイピングゲーム</div>         
-        </div> 
+        </div>        
     </header>  
     <typingtop v-show="currentComponent === 'typingtop'"></typingtop>
-    <typingstart v-show="currentComponent === 'typingstart'" :kata="kata" :roman="roman" :PassSec="PassSec" :num="num" @RandomWord="RandomWord" @SendSumCount="SendSumCount2" ref="foo"></typingstart>
-    <typingresult v-show="currentComponent === 'typingresult'" :sumcount="sumcount"></typingresult>
+    <typingstart v-show="currentComponent === 'typingstart'" :kata="kata" :roman="roman" :PassSec="PassSec" :num="num" @RandomWord="RandomWord" @SendSumCount="SendSumCount2" @TypedAnimal="TypedAnimal" @MissCount="MissCount" ref="foo"></typingstart>
+    <typingresult v-show="currentComponent === 'typingresult'" :sumcount="sumcount" :typing="typing" :Typed_animal="Typed_animal" :misscount="misscount"></typingresult>
   </div>
 </template>
 
@@ -34,6 +34,8 @@ export default {
             img: "",
             num: 1,
             sumcount: 0,
+            misscount: 0,
+            Typed_animal: "",
             }
     },
     mounted() {
@@ -64,6 +66,12 @@ export default {
         },
         SendSumCount2(count) {
             this.sumcount = count;
+        },
+        TypedAnimal(Typed_Animal) {
+            this.Typed_animal = Typed_Animal;
+        },
+        MissCount(misscount) {
+            this.misscount = misscount;
         }
     },
     components: {
