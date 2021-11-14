@@ -108,14 +108,14 @@ body {
 
 .header_pc {
     height: 60px;
-    background-color: green;
+    background-color: #007f00;
     align-items: center;
     padding: 15px;
 }
 
 .header_sp {
     height: 40px;
-    background-color: green;
+    background-color: #007f00;
     align-items: center;
     padding: 10px;    
 }

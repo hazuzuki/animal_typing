@@ -7,8 +7,13 @@
         <div v-if="$mq === 'sp'">
             <div>訪問ありがとうございます。</div>
             <div>こちらは、パソコン専用のサイトです。</div>
-            <div>パソコンからアクセスしてください。</div>                       
+            <div>パソコンからアクセスしてください。</div>  
+            <div class="video">
+                <div class="video-description">▽ゲームのプレイ動画はこちら</div> 
+                <iframe width="100%" src="https://www.youtube.com/embed/3JgsTd0hHKE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
         </div>
+
     </div>
 </template>
 
@@ -25,5 +30,17 @@
 
 .start {
     font-size: 30px;
+}
+
+.video {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #409933;
+}
+
+.video-description {
+    color: white;
+    margin-bottom: 10px;
+    text-align: left;
 }
 </style>
