@@ -80,6 +80,7 @@ export default {
         typingtop,
     },
 }
+
 </script>
 
 <style>
