@@ -2,12 +2,12 @@
   <div>
     <header class="header_pc" v-if="$mq === 'pc'">
         <div v-if="$mq === 'pc'">
-            <div class="title_pc">動物タイピングゲーム</div>
+            <div class="title_pc">どうぶつタイピングゲーム</div>
         </div>
     </header>
     <header class="header_sp" v-if="$mq === 'sp'">
         <div v-if="$mq === 'sp'">
-            <div class="title_sp">動物タイピングゲーム</div>         
+            <div class="title_sp">どうぶつタイピングゲーム</div>         
         </div>        
     </header>  
     <typingtop v-show="currentComponent === 'typingtop'"></typingtop>
@@ -61,7 +61,7 @@ export default {
         RandomWord() {
             this.num = Math.floor(Math.random() * this.typing.length);
             this.kata = this.typing[this.num].name;
-            this.roman = kanaToRoman(this.kata);
+            this.roman = kanaToRoman(this.kata,"hepburn",{bmp : false,});
             this.img = this.typing[this.num].img;
         },
         SendSumCount2(count) {
