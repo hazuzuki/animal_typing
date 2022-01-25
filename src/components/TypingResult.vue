@@ -39,6 +39,7 @@ export default {
   color: #FFF;
   border-bottom: solid 4px #627295;
   border-radius: 3px;
+  cursor: pointer;
 }
 .btn-square:active {
   /*ボタンを押したとき*/

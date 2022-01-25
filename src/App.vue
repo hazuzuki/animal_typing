@@ -2,15 +2,15 @@
   <div>
     <header class="header_pc" v-if="$mq === 'pc'">
         <div v-if="$mq === 'pc'">
-            <div class="title_pc">どうぶつタイピングゲーム</div>
+            <div class="title_pc">動物タイピングゲーム</div>
         </div>
     </header>
     <header class="header_sp" v-if="$mq === 'sp'">
         <div v-if="$mq === 'sp'">
-            <div class="title_sp">どうぶつタイピングゲーム</div>         
+            <div class="title_sp">動物タイピングゲーム</div>         
         </div>        
     </header>  
-    <typingtop v-show="currentComponent === 'typingtop'"></typingtop>
+    <typingtop v-show="currentComponent === 'typingtop'" @gameStart="gameStart"></typingtop>
     <typingstart v-show="currentComponent === 'typingstart'" :kata="kata" :roman="roman" :PassSec="PassSec" :num="num" @RandomWord="RandomWord" @SendSumCount="SendSumCount2" @TypedAnimal="TypedAnimal" @MissCount="MissCount" ref="foo"></typingstart>
     <typingresult v-show="currentComponent === 'typingresult'" :sumcount="sumcount" :typing="typing" :Typed_animal="Typed_animal" :misscount="misscount"></typingresult>
   </div>
