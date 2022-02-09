@@ -22,7 +22,7 @@
                     <dt>2022.1.26</dt>
                     <dd>更新履歴を追加しました。</dd>
                     <dt>2022.1.26</dt>
-                    <dd>使い方を追加しました。</dd>
+                    <dd>遊び方を追加しました。</dd>
                     </dl>
                 </div>
                 <img src="@/assets/animal_chara_mogura_kouji_ana.png" alt="掲示板" width="20%" height="20%">
