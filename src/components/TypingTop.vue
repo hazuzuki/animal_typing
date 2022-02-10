@@ -168,4 +168,8 @@
     margin-top: 30px;
 }
 
+.video {
+    margin-bottom: 30px;
+}
+
 </style>
