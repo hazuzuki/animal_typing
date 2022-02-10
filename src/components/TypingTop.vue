@@ -15,18 +15,6 @@
                         </ol>
                 </div>
             </div>
-            <div class="change_log">
-                <div class="content">
-                    <h2>更新履歴</h2>
-                    <dl>
-                    <dt>2022.1.26</dt>
-                    <dd>更新履歴を追加しました。</dd>
-                    <dt>2022.1.26</dt>
-                    <dd>遊び方を追加しました。</dd>
-                    </dl>
-                </div>
-                <img src="@/assets/animal_chara_mogura_kouji_ana.png" alt="掲示板" width="20%" height="20%">
-            </div>
         </div>
         <div v-if="$mq === 'sp'">
             <div>訪問ありがとうございます。</div>
@@ -37,8 +25,25 @@
                 <iframe width="100%" src="https://www.youtube.com/embed/3JgsTd0hHKE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
         </div>
-
-    </div>
+            <div class="change_log">
+                <div class="content">
+                    <h2>更新履歴</h2>
+                    <dl>
+                    <dt>2022.2.10</dt>
+                    <dd>「見つけた動物」の一覧表示の仕方を変更しました。</dd>
+                    <dt>2022.2.10</dt>
+                    <dd>SNSのシェアボタンを追加しました。</dd>
+                    <dt>2022.2.9</dt>
+                    <dd>同じ動物が出現するバグを修正しました。</dd>
+                    <dt>2022.1.26</dt>
+                    <dd>更新履歴を追加しました。</dd>
+                    <dt>2022.1.26</dt>
+                    <dd>遊び方を追加しました。</dd>
+                    </dl>
+                </div>
+                <img src="@/assets/animal_chara_mogura_kouji_ana.png" alt="掲示板" width="20%" height="20%">
+            </div>
+        </div>
 </template>
 
 <script>
@@ -141,6 +146,7 @@
 
 .change_log > .content > dl {
     text-align: left;
+    line-height: 1.5em;
 }
 
 .change_log > .content > dl> dt {
