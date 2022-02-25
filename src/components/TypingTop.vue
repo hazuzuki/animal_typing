@@ -29,6 +29,12 @@
                 <div class="content">
                     <h2>更新履歴</h2>
                     <dl>
+                    <dt>2022.2.25</dt>
+                    <dd>「ゲームについて」を追加しました</dd>
+                    <dt>2022.2.25</dt>
+                    <dd>同じ動物が出現するバグを修正しました。</dd>
+                    <dt>2022.2.25</dt>
+                    <dd>Twitterへの投稿に「#動物タイピングゲーム」を追加しました。</dd>
                     <dt>2022.2.10</dt>
                     <dd>「見つけた動物」の一覧表示の仕方を変更しました。</dd>
                     <dt>2022.2.10</dt>
@@ -42,6 +48,13 @@
                     </dl>
                 </div>
                 <img src="@/assets/animal_chara_mogura_kouji_ana.png" alt="掲示板" width="20%" height="20%">
+            </div>
+            <div class="profile">
+                <h2>ゲームについて</h2>
+                    <div>
+                        <p>ゲームのご意見・ご感想は下記のtwitterまで！</p>
+                        <a target="_blank" href="https://twitter.com/animal_typ"><img class="icon" src="@/assets/twitter_icon.png" alt="アイコン" width="80px" height="80px"></a>
+                    </div>
             </div>
         </div>
 </template>
@@ -123,7 +136,7 @@
 }
 
 .change_log {
-    margin-bottom: 100px;
+    margin-bottom: 50px;
 }
 
 .change_log > .content {
@@ -170,6 +183,19 @@
 
 .video {
     margin-bottom: 30px;
+}
+
+.profile {
+    margin-bottom: 100px;
+}
+
+.profile > h2 {
+    font-size: 20px !important;
+    margin-bottom: 10px;
+}
+
+p {
+    font-size: 15px !important;
 }
 
 </style>

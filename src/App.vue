@@ -36,6 +36,7 @@ export default {
             sumcount: 0,
             misscount: 0,
             Typed_animal: "",
+            randoms : [],
             }
     },
     mounted() {
@@ -59,10 +60,9 @@ export default {
             }
         },
         RandomWord() {
-            var randoms = [];
             this.num = Math.floor(Math.random() * this.typing.length);
-            randoms.push(this.num);
-            if(!randoms.includes(randoms)){
+            this.randoms.push(this.num);
+            if(!this.randoms.includes(this.randoms)){
                 this.kata = this.typing[this.num].name;
                 this.roman = kanaToRoman(this.kata,"hepburn",{bmp : false,});
                 this.img = this.typing[this.num].img;
