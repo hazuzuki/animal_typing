@@ -34,7 +34,7 @@ export default {
         },
         link_twitter() {
             const dataUrl = "https://hazuzuki.github.io/animal_typing/"
-            window.open('https://twitter.com/share?text=' + this.sumcount + "匹の動物を見つけたよ。みんなも遊んでみてね。" + '&url=' + dataUrl );
+            window.open('https://twitter.com/share?text=' + this.sumcount + "匹の動物を見つけたよ。みんなも遊んでみてね。" + "&hashtags=動物タイピングゲーム" +'&url=' + dataUrl );
         }
     }
 }
