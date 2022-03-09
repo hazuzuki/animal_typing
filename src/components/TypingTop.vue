@@ -29,8 +29,10 @@
                 <div class="content">
                     <h2>更新履歴</h2>
                     <dl>
+                    <dt>2022.3.9</dt>
+                    <dd>「関連のゲーム」を追加しました。</dd>
                     <dt>2022.2.25</dt>
-                    <dd>「ゲームについて」を追加しました</dd>
+                    <dd>「ゲームについて」を追加しました。</dd>
                     <dt>2022.2.25</dt>
                     <dd>同じ動物が出現するバグを修正しました。</dd>
                     <dt>2022.2.25</dt>
@@ -54,6 +56,14 @@
                     <div>
                         <p>ゲームのご意見・ご感想は下記のtwitterまで！</p>
                         <a target="_blank" href="https://twitter.com/animal_typ"><img class="icon" src="@/assets/twitter_icon.png" alt="アイコン" width="80px" height="80px"></a>
+                    </div>
+            </div>
+            <div class="content anothor_game">
+                <h2>関連のゲーム</h2>
+                    <div>
+                        <p>こちらも遊んでみてね</p>
+                        <div><img class="icon" src="@/assets/bird_typ.png" alt="アイコン" width="20%" height="20%"></div>
+                        <a class="btn btn-small" target="_blank" href="https://hazuzuki.github.io/bird_typing/">野鳥タイピングゲーム</a>
                     </div>
             </div>
         </div>
@@ -185,10 +195,6 @@
     margin-bottom: 30px;
 }
 
-.profile {
-    margin-bottom: 100px;
-}
-
 .profile > h2 {
     font-size: 20px !important;
     margin-bottom: 10px;
@@ -197,5 +203,23 @@
 p {
     font-size: 15px !important;
 }
+
+.anothor_game {
+    margin-bottom: 100px;
+}
+
+.anothor_game > h2 {
+    font-size: 20px !important;
+    margin-bottom: 10px;
+}
+
+.anothor_game > div > p {
+    margin-bottom: 10px;
+}
+
+.anothor_game > div > div > img {
+    margin-bottom: 10px;
+}
+
 
 </style>
