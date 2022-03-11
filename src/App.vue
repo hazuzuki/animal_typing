@@ -59,13 +59,16 @@ export default {
                 this.$refs.foo.Judge(event.key);
             }
         },
-        RandomWord() {
-            this.num = Math.floor(Math.random() * this.typing.length);
-            this.randoms.push(this.num);
-            if(!this.randoms.includes(this.randoms)){
-                this.kata = this.typing[this.num].name;
+       RandomWord() {
+            this.random_num = Math.floor(Math.random() * this.typing.length);
+            if(!this.randoms.includes(this.random_num)){
+                this.kata = this.typing[this.random_num].name;
                 this.roman = kanaToRoman(this.kata,"hepburn",{bmp : false,});
-                this.img = this.typing[this.num].img;
+                this.img = this.typing[this.random_num].img;
+                this.num = this.random_num;
+                this.randoms.push(this.random_num);
+            } else {
+                this.RandomWord();
             }
         },
         SendSumCount2(count) {
