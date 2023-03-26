@@ -29,6 +29,8 @@
                 <div class="content">
                     <h2>更新履歴</h2>
                     <dl>
+                    <dt>2023.3.26</dt>
+                    <dd>字のサイズを大きくしました。</dd>
                     <dt>2022.3.9</dt>
                     <dd>「関連のゲーム」を追加しました。</dd>
                     <dt>2022.2.25</dt>
@@ -201,7 +203,7 @@
 }
 
 p {
-    font-size: 15px !important;
+    font-size: 35px !important;
 }
 
 .anothor_game {
