@@ -56,16 +56,16 @@
             <div class="profile">
                 <h2>ゲームについて</h2>
                     <div>
-                        <p>ゲームのご意見・ご感想は下記のtwitterまで！</p>
+                        <p class="message">ゲームのご意見・ご感想は下記のtwitterまで！</p>
                         <a target="_blank" href="https://twitter.com/animal_typ"><img class="icon" src="@/assets/twitter_icon.png" alt="アイコン" width="80px" height="80px"></a>
                     </div>
             </div>
             <div class="content anothor_game">
                 <h2>関連のゲーム</h2>
                     <div>
-                        <p>こちらも遊んでみてね</p>
-                        <div><img class="icon" src="@/assets/bird_typ.png" alt="アイコン" width="20%" height="20%"></div>
-                        <a class="btn btn-small" target="_blank" href="https://hazuzuki.github.io/bird_typing/">野鳥タイピングゲーム</a>
+                        <p class="message">こちらも遊んでみてね</p>
+                        <div><img class="icon" src="@/assets/bird_typ.png" alt="アイコン" width="300px"></div>
+                        <a class="btn btn-small btn-square" target="_blank" href="https://hazuzuki.github.io/bird_typing/">野鳥タイピングゲーム</a>
                     </div>
             </div>
         </div>
@@ -203,7 +203,11 @@
 }
 
 p {
-    font-size: 35px !important;
+    font-size: 35px;
+}
+
+.message{
+    font-size: 1.2em;
 }
 
 .anothor_game {
@@ -221,6 +225,12 @@ p {
 
 .anothor_game > div > div > img {
     margin-bottom: 10px;
+}
+
+.btn-small{
+ height: 30px;
+ width: 200px;
+ font-size: 15px;
 }
 
 
