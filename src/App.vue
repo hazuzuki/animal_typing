@@ -40,11 +40,18 @@ export default {
             }
     },
     mounted() {
-        document.addEventListener('keydown', this.gameStart);
+        if (this.$mq === "pc") {
+            document.addEventListener("keydown", this.gameStart);
+        }
+    },
+    beforeDestroy() {
+        document.removeEventListener("keydown", this.gameStart);
     },
     methods: {
-        gameStart() {
-        if(event.key === "Enter" && this.currentComponent === "typingtop") {  
+        gameStart(event) {
+        if (this.currentComponent === "typingtop" &&
+            (!event || event.key === "Enter")
+        ) {
             this.currentComponent = "typingstart";
             this.RandomWord();
             var tmp = this;
@@ -55,8 +62,8 @@ export default {
                     clearInterval(timerID); 
                 }
             },1000); 
-        } else {
-                this.$refs.foo.Judge(event.key);
+        } else if (this.$mq === "pc") {
+            this.$refs.foo.Judge(event.key);
             }
         },
        RandomWord() {

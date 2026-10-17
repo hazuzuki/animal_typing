@@ -1,4 +1,4 @@
-# sushida2
+# animal_typing
 
 ## Project setup
 ```
