@@ -1,7 +1,7 @@
 <template>
   <div class="content">
-    <p>ただいまのカウント:{{ count }}</p>
-    <p>残り時間:{{PassSec}}</p>
+    <p class="game-status">ただいまのカウント:{{ count }}</p>
+    <p class="game-status">残り時間:{{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
     <p v-else class="type-word">
@@ -62,10 +62,6 @@ export default {
       return true
     },
     JudgeKana: function(event) {
-      if (event.isComposing || event.target.composing) {
-        return;
-      }
-
       const input = event.target.value;
       this.kanaInput = "";
       event.target.value = "";
@@ -169,6 +165,10 @@ name: 'App',
 
     .type-word {
         font-size: 24px;
+    }
+
+    .game-status {
+      font-size: 18px;
     }
 
   input {
