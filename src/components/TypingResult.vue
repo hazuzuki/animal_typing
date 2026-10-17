@@ -127,4 +127,67 @@ export default {
     cursor: pointer;
 }
 
+@media screen and (max-width: 600px) {
+
+    h1 {
+        font-size: 36px;
+    }
+
+    .sumcount {
+        font-size: 20px;
+    }
+
+    .btn-square {
+        font-size: 24px;
+        padding: 12px 30px;
+    }
+
+    .content > img {
+        width: 60%;
+        height: auto;
+        margin-top: 20px;
+    }
+
+    .find_animal {
+        font-size: 24px;
+        margin: 20px 0;
+    }
+
+    .icon-list > img {
+        width: 60px;
+        height: 60px;
+        margin: 0 10px;
+    }
+
+    .animal_list {
+        padding: 20px;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .animal {
+        width: 45%;
+        text-align: center;
+    }
+
+    .animal-img {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+    }
+
+    .animal_list {
+        padding-bottom: 150px;
+    }
+
+    .animal_list_none {
+        margin-bottom: 150px;
+    }
+
+    .content {
+        padding-bottom: 220px;
+    }
+
+}
+
 </style>

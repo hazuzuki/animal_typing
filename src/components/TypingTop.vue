@@ -1,34 +1,48 @@
 <template>
     <div class="content">
-        <div><img src="@/assets/tree_animals_group (1).png" alt="動物の画像" width="30%" height="30%"></div>
-        <div v-if="$mq === 'pc'">
-            <div class="start"><span class="green">Enter</span>を押してゲーム開始</div>
-            <div class="play">
-                <img src="@/assets/keijiban.png" alt="掲示板" width="700px" height="350px">
-                <div class="how_to_play">
-                        <h2>遊び方</h2>
-                        <p>あなたは、動物園の飼育員です。ある日、動物園から150匹の動物が逃げ出してしまいました。このままでは、園長に怒られてしまいます。制限時間内に動物を見つけだそう！</p>
-                        <ol>
-                            <li>Enterを押すとゲームが開始します。</li>
-                            <li>制限時間は、60秒です。制限時間内にたくさんの動物を見つけてください。</li>
-                            <li>ゲーム終了後、見つけた動物を一覧で確認できます。</li>
-                        </ol>
-                </div>
+    <div>
+        <img 
+        class="tree-animals"
+        src="@/assets/tree_animals_group (1).png" 
+        alt="動物の画像">
+    </div>
+
+        <span v-if="$mq === 'pc'">
+            <span class="green">Enter</span>を押してゲーム開始
+        </span>
+
+        <a
+            v-if="$mq === 'sp'"
+            class="btn btn-small btn-square"
+            @click="$emit('gameStart')"
+        >
+            ゲーム開始
+        </a>
+        <div class="play">
+            <img src="@/assets/keijiban.png" alt="掲示板" width="700px" height="350px">
+            <div class="how_to_play">
+                    <h2>遊び方</h2>
+                    <p>あなたは、動物園の飼育員です。ある日、動物園から150匹の動物が逃げ出してしまいました。このままでは、園長に怒られてしまいます。制限時間内に動物を見つけだそう！</p>
+                    <ol>
+                        <li v-if="$mq === 'pc'">Enterを押すとゲームが開始します。</li>
+                        <li v-if="$mq === 'sp'">ゲーム開始ボタンを押すとゲームが開始します。</li>
+                        <li>制限時間は、60秒です。制限時間内にたくさんの動物を見つけてください。</li>
+                        <li>ゲーム終了後、見つけた動物を一覧で確認できます。</li>
+                    </ol>
             </div>
-        </div>
+            </div>
         <div v-if="$mq === 'sp'">
-            <div>訪問ありがとうございます。</div>
-            <div>こちらは、パソコン専用のサイトです。</div>
-            <div>パソコンからアクセスしてください。</div>  
-            <div class="video">
-                <div class="video-description">▽ゲームのプレイ動画はこちら</div> 
-                <iframe width="100%" src="https://www.youtube.com/embed/3JgsTd0hHKE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
+        <div class="video">
+            <div class="video-description">▽ゲームのプレイ動画はこちら</div> 
+            <iframe width="100%" src="https://www.youtube.com/embed/3JgsTd0hHKE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
         </div>
             <div class="change_log">
                 <div class="content">
                     <h2>更新履歴</h2>
                     <dl>
+                    <dt>2026.10.17</dt>
+                    <dd>スマートフォンからも遊べるようになりました。</dd>
                     <dt>2023.3.26</dt>
                     <dd>字のサイズを大きくしました。</dd>
                     <dt>2022.3.9</dt>
@@ -51,7 +65,7 @@
                     <dd>遊び方を追加しました。</dd>
                     </dl>
                 </div>
-                <img src="@/assets/animal_chara_mogura_kouji_ana.png" alt="掲示板" width="20%" height="20%">
+                <img class="mogura" src="@/assets/animal_chara_mogura_kouji_ana.png" alt="掲示板">
             </div>
             <div class="profile">
                 <h2>ゲームについて</h2>
@@ -80,6 +94,7 @@
 .content {
     padding: 20px;
     text-align: center;
+    overflow-x: hidden;
 }
 
 .start {
@@ -91,6 +106,7 @@
     margin-top: 30px;
     padding: 15px;
     background-color: #409933;
+    margin-bottom: 30px;
 }
 
 .video-description {
@@ -160,13 +176,13 @@
 }
 
 .change_log > .content ::before {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -15px;
-  border: 15px solid transparent;
-  border-top: 15px solid white;
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -15px;
+    border: 15px solid transparent;
+    border-top: 15px solid white;
 }
 
 .change_log > .content > dl {
@@ -191,10 +207,6 @@
     display: block;
     margin: 0 auto;
     margin-top: 30px;
-}
-
-.video {
-    margin-bottom: 30px;
 }
 
 .profile > h2 {
@@ -228,9 +240,88 @@ p {
 }
 
 .btn-small{
- height: 30px;
- width: 200px;
- font-size: 15px;
+    height: 30px;
+    width: 210px;
+    font-size: 15px;
+}
+
+.mogura {
+    width: 20%;
+}
+
+
+.tree-animals {
+    width: 30%;
+}
+
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+@media screen and (max-width: 600px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .tree-animals {
+        width: 70%;
+    }
+
+    .play {
+        width: 140%;
+        height: 600px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding-top: 5%;
+    }
+
+    .play > img {
+        width: 100%;
+        height: 80%;
+        object-fit: fill;
+    }
+
+    .how_to_play {
+        width: 60%;
+        top: 80px;
+        left: 20%;
+        font-size: 15px !important;
+    }
+
+    .how_to_play > h2 {
+        font-size: 20px !important;
+    }
+
+    .how_to_play > p {
+        font-size: 15px !important;
+        line-height: 20px;
+    }
+
+    .change_log > .content {
+        height: 350px;
+        overflow-y: auto;
+        padding: 10px 20px;
+    }
+
+    .change_log > .content > h2 {
+        position: sticky;
+        top: -10px;
+        background-color: white;
+        z-index: 10;
+        padding: 10px 0;
+        margin-top: -10px;
+        margin-bottom: 10px;
+    }
+
+    .mogura {
+        width: 40%;
+    }
+
+    .video {
+        margin-top: -80px;
+    }
+
 }
 
 

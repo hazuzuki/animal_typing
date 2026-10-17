@@ -3,8 +3,20 @@
     <p>ただいまのカウント:{{ count }}</p>
     <p>残り時間:{{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
-    <p>{{ kata }}</p>
-    <p class="type-word"><span class="done">{{ pressed }}</span>{{ roman2 }}</p>
+    <p v-if="$mq === 'pc'">{{ kata }}</p>
+    <p v-else class="type-word">
+    <span class="done">{{ pressedKana }}</span>{{ hiragana2 }}
+    </p>
+    <p v-if="$mq === 'pc'" class="type-word">
+      <span class="done">{{ pressed }}</span>{{ roman2 }}
+    </p>
+    <input
+      ref="input"
+      v-if="$mq === 'sp'"
+      v-model="kanaInput"
+      @input="JudgeKana"
+      type="text"
+    />
   </div>
 </template>
 
@@ -24,6 +36,9 @@ export default {
       roman2: this.roman,
       pressed: "",
       typed_animal: [],
+      kanaInput: "",
+      hiragana2: "",
+      pressedKana: "",
       }
   },
   methods: {
@@ -45,21 +60,76 @@ export default {
         this.misscount += 1;
       }
       return true
-  },
+    },
+    JudgeKana: function(event) {
+      if (event.isComposing || event.target.composing) {
+        return;
+      }
+
+      const input = event.target.value;
+      this.kanaInput = "";
+      event.target.value = "";
+
+      for (const key of input) {
+        if (this.hiragana2[0] !== key) {
+          this.buzzeraudio.play();
+          this.misscount += 1;
+          break;
+        }
+
+        this.pressedKana += key;
+        this.hiragana2 = this.hiragana2.slice(1);
+
+        if (this.hiragana2.length === 0) {
+          this.$emit('RandomWord');
+          this.pressedKana = "";
+          this.count += 1;
+          this.audio.play();
+          this.typed_animal.push(this.num);
+          this.SendSumCount();
+          break;
+        }
+      }
+    },
   SendSumCount: function() {
      this.$emit('SendSumCount', this.count);
      this.$emit('TypedAnimal', this.typed_animal);
      this.$emit('MissCount', this.misscount);
-
-
+  },
+  toHiragana: function(text) {
+    return text.replace(/[\u30A1-\u30F6]/g, c =>
+        String.fromCharCode(c.charCodeAt(0) - 0x60)
+    );
   },
   },
-watch: {
-      roman: function(){
-        this.roman2 = this.roman;
+  watch: {
+      roman: {
+          immediate: true,
+          handler() {
+              this.roman2 = this.roman;
+              this.hiragana2 = this.toHiragana(this.kata);
+              this.pressedKana = "";
+          }
+      }
+  },
+
+  mounted() {
+      if (this.$mq === "sp") {
+          this.$nextTick(() => {
+              this.$refs.input.focus();
+          });
+      }
+  },
+
+  updated() {
+      if (this.$mq === "sp") {
+          this.$nextTick(() => {
+              this.$refs.input.focus();
+          });
       }
 },
-  name: 'App',
+
+name: 'App',
 }
 </script>
 
@@ -68,7 +138,7 @@ watch: {
     border: 3px solid;
   }
 
-  .done {
+  .type-word .done {
     color: gray;
   }
 
@@ -90,6 +160,21 @@ watch: {
   height: 350px;
   object-fit: cover; 
   padding: 10px;
+}
+
+@media screen and (max-width: 600px) {
+    p {
+        font-size: 24px;
+    }
+
+    .type-word {
+        font-size: 24px;
+    }
+
+  input {
+      opacity: 0;
+      position: absolute;
+  }
 }
 
 </style>
