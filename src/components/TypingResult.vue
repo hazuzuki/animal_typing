@@ -8,7 +8,7 @@
         <div class="share">
             <p class="find_animal">見つけた動物を報告する</p>
             <div class="icon-list">
-                <img @click="link_twitter" src="@/assets/twitter_icon.png" alt="twitterアイコン" width="80px" height="80px"> 
+                <img @click="shareOnX" src="@/assets/x_icon.svg" alt="Xでシェア" width="80px" height="80px">
                 <a href="https://social-plugins.line.me/lineit/share?url=https://hazuzuki.github.io/animal_typing/" target="_blank" rel="nofollow"><img src="@/assets/line_icon.png" alt="lineアイコン" width="80px" height="80px"></a>
             </div>
         </div>
@@ -32,9 +32,14 @@ export default {
         reload() {
             this.$router.go(this.$router.currentRoute)
         },
-        link_twitter() {
-            const dataUrl = "https://hazuzuki.github.io/animal_typing/"
-            window.open('https://twitter.com/share?text=' + this.sumcount + "匹の動物を見つけたよ。みんなも遊んでみてね。" + "&hashtags=動物タイピングゲーム" +'&url=' + dataUrl );
+        shareOnX() {
+            const shareUrl = new URL("https://x.com/intent/post");
+            shareUrl.search = new URLSearchParams({
+                text: `${this.sumcount}匹の動物を見つけたよ。みんなも遊んでみてね。`,
+                hashtags: "動物タイピングゲーム",
+                url: "https://hazuzuki.github.io/animal_typing/",
+            });
+            window.open(shareUrl.toString(), "_blank", "noopener,noreferrer");
         }
     }
 }
