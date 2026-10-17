@@ -52,7 +52,7 @@
                     <dt>2022.2.25</dt>
                     <dd>同じ動物が出現するバグを修正しました。</dd>
                     <dt>2022.2.25</dt>
-                    <dd>Twitterへの投稿に「#動物タイピングゲーム」を追加しました。</dd>
+                    <dd>Xへの投稿に「#動物タイピングゲーム」を追加しました。</dd>
                     <dt>2022.2.10</dt>
                     <dd>「見つけた動物」の一覧表示の仕方を変更しました。</dd>
                     <dt>2022.2.10</dt>
@@ -70,8 +70,8 @@
             <div class="profile">
                 <h2>ゲームについて</h2>
                     <div>
-                        <p class="message">ゲームのご意見・ご感想は下記のtwitterまで！</p>
-                        <a target="_blank" href="https://twitter.com/animal_typ"><img class="icon" src="@/assets/twitter_icon.png" alt="アイコン" width="80px" height="80px"></a>
+                        <p class="message">ゲームのご意見・ご感想は下記のXアカウントまで！</p>
+                        <a target="_blank" rel="noopener noreferrer" href="https://x.com/animal_typ"><img class="icon" src="@/assets/x_icon.svg" alt="Xアカウント" width="80px" height="80px"></a>
                     </div>
             </div>
             <div class="content anothor_game">
