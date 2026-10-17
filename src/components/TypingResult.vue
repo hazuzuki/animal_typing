@@ -8,8 +8,8 @@
         <div class="share">
             <p class="find_animal">見つけた動物を報告する</p>
             <div class="icon-list">
-                <img @click="shareOnX" src="@/assets/x_icon.svg" alt="Xでシェア" width="80px" height="80px">
-                <a href="https://social-plugins.line.me/lineit/share?url=https://hazuzuki.github.io/animal_typing/" target="_blank" rel="nofollow"><img src="@/assets/line_icon.png" alt="lineアイコン" width="80px" height="80px"></a>
+                <img class="share-icon share-icon-x" @click="shareOnX" src="@/assets/x_icon.svg" alt="Xでシェア">
+                <a href="https://social-plugins.line.me/lineit/share?url=https://hazuzuki.github.io/animal_typing/" target="_blank" rel="nofollow"><img class="share-icon" src="@/assets/line_icon.png" alt="LINEでシェア"></a>
             </div>
         </div>
         <p class="find_animal">見つけた動物</p>
@@ -93,7 +93,20 @@ export default {
 }
 
 .icon-list {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
     margin-bottom: 100px;
+}
+.icon-list img.share-icon {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+.icon-list img.share-icon-x {
+    width: 58px;
+    height: 58px;
 }
 .icon-list > .icon {
     width: auto;
@@ -158,10 +171,14 @@ export default {
         margin: 20px 0;
     }
 
-    .icon-list > img {
+    .icon-list img.share-icon {
         width: 60px;
         height: 60px;
-        margin: 0 10px;
+    }
+
+    .icon-list img.share-icon-x {
+        width: 43px;
+        height: 43px;
     }
 
     .animal_list {

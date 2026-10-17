@@ -71,7 +71,7 @@
                 <h2>ゲームについて</h2>
                     <div>
                         <p class="message">ゲームのご意見・ご感想は下記のXアカウントまで！</p>
-                        <a target="_blank" rel="noopener noreferrer" href="https://x.com/animal_typ"><img class="icon" src="@/assets/x_icon.svg" alt="Xアカウント" width="80px" height="80px"></a>
+                        <a target="_blank" rel="noopener noreferrer" href="https://x.com/animal_typ"><img class="icon" src="@/assets/x_icon.svg" alt="Xアカウント" width="60px" height="60px"></a>
                     </div>
             </div>
             <div class="content anothor_game">
