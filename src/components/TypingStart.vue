@@ -1,7 +1,7 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント:{{ count }}</p>
-    <p class="game-status">残り時間:{{PassSec}}</p>
+    <p class="game-status">ただいまのカウント {{ count }}</p>
+    <p class="game-status">残り時間 {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
     <p v-else class="type-word">
@@ -15,6 +15,7 @@
       ref="input"
       v-if="$mq === 'sp'"
       @input="handleMobileInput"
+      @compositionend="handleMobileCompositionEnd"
       type="text"
     />
   </div>
@@ -59,6 +60,8 @@ export default {
       inputResetKey: 0,
       lastAcceptedKana: "",
       lastAcceptedKanaAt: 0,
+      lastCompositionInput: "",
+      lastCompositionInputAt: 0,
       }
   },
   methods: {
@@ -128,9 +131,8 @@ export default {
         return;
       }
 
-      // IME can emit several input events while a kana is still being composed.
-      // Judge only the committed value; otherwise an intermediate candidate can
-      // be mistaken for a typo (including just after completing a word).
+      // For voiced kana, intermediate IME input must reach the handling below
+      // so the base kana and dakuten can be combined before judging.
       const expectedKana = this.hiragana2[0];
       const expectedBase = PENDING_KANA_BASES[expectedKana];
       if ((event.isComposing || event.target.composing) && !expectedBase) {
@@ -140,6 +142,18 @@ export default {
       const rawInput = this.toHiragana(event.target.value.normalize("NFKC").normalize("NFC"));
       const eventInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
       let input = eventInput || rawInput;
+
+      if (
+        input &&
+        input === this.lastCompositionInput &&
+        event.timeStamp - this.lastCompositionInputAt < 250
+      ) {
+        this.lastCompositionInput = "";
+        event.target.value = "";
+        return;
+      }
+
+      this.lastCompositionInput = "";
 
       if (
         input &&
@@ -206,7 +220,22 @@ export default {
         }
       }
 
-      const firstKey = Array.from(input)[0];
+      let firstKey = Array.from(input)[0];
+      if (firstKey !== this.hiragana2[0] && rawInput) {
+        let rawCandidate = rawInput;
+        if (rawCandidate.startsWith(this.pressedKana)) {
+          rawCandidate = rawCandidate.slice(this.pressedKana.length);
+        }
+        const rawFirstKey = Array.from(rawCandidate)[0];
+        if (
+          rawFirstKey === this.hiragana2[0] ||
+          rawFirstKey === PENDING_KANA_BASES[this.hiragana2[0]]
+        ) {
+          input = rawCandidate;
+          firstKey = rawFirstKey;
+        }
+      }
+
       if (firstKey && intermediateKana === firstKey) {
         this.pendingKana = expectedBase;
         return;
@@ -237,6 +266,21 @@ export default {
           break;
         }
       }
+    },
+    handleMobileCompositionEnd: function(event) {
+      const committedInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
+      if (!committedInput) {
+        return;
+      }
+
+      this.handleMobileInput({
+        target: event.target,
+        data: committedInput,
+        isComposing: false,
+        timeStamp: event.timeStamp,
+      });
+      this.lastCompositionInput = committedInput;
+      this.lastCompositionInputAt = event.timeStamp;
     },
   SendSumCount: function() {
      this.$emit('SendSumCount', this.count);
