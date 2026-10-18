@@ -13,7 +13,6 @@
     <input
       ref="input"
       v-if="$mq === 'sp'"
-      v-model="kanaInput"
       @input="JudgeKana"
       type="text"
     />
@@ -36,7 +35,6 @@ export default {
       roman2: this.roman,
       pressed: "",
       typed_animal: [],
-      kanaInput: "",
       hiragana2: "",
       pressedKana: "",
       }
@@ -62,13 +60,12 @@ export default {
       return true
     },
     JudgeKana: function(event) {
-      if (event.isComposing || event.target.composing) {
-        return;
-      }
-
-      const input = event.data || event.target.value;
-      this.kanaInput = "";
+      let input = event.data === null ? event.target.value : event.data;
       event.target.value = "";
+
+      if (input.startsWith(this.pressedKana) && input.length > this.pressedKana.length) {
+        input = input.slice(this.pressedKana.length);
+      }
 
       for (const key of input) {
         if (this.hiragana2[0] !== key) {
