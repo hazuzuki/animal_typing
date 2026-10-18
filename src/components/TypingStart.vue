@@ -57,6 +57,8 @@ export default {
       pendingKana: "",
       advancingToNextWord: false,
       inputResetKey: 0,
+      lastAcceptedKana: "",
+      lastAcceptedKanaAt: 0,
       }
   },
   methods: {
@@ -114,9 +116,19 @@ export default {
         return;
       }
 
-      const rawInput = event.target.value.normalize("NFKC").normalize("NFC");
-      const eventInput = (event.data || "").normalize("NFKC").normalize("NFC");
+      const rawInput = this.toHiragana(event.target.value.normalize("NFKC").normalize("NFC"));
+      const eventInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
       let input = eventInput || rawInput;
+
+      if (
+        input &&
+        input === this.lastAcceptedKana &&
+        event.timeStamp - this.lastAcceptedKanaAt < 250
+      ) {
+        event.target.value = "";
+        return;
+      }
+
       const expectedKana = this.hiragana2[0];
       const expectedBase = PENDING_KANA_BASES[expectedKana];
       const intermediateKana = HAN_DAKUTEN_INTERMEDIATE_KANA[expectedKana];
@@ -199,6 +211,8 @@ export default {
 
         this.pressedKana += key;
         this.hiragana2 = this.hiragana2.slice(1);
+        this.lastAcceptedKana = key;
+        this.lastAcceptedKanaAt = event.timeStamp;
 
         if (this.hiragana2.length === 0) {
           this.advancingToNextWord = true;
