@@ -62,7 +62,11 @@ export default {
       return true
     },
     JudgeKana: function(event) {
-      const input = event.target.value;
+      if (event.isComposing || event.target.composing) {
+        return;
+      }
+
+      const input = event.data || event.target.value;
       this.kanaInput = "";
       event.target.value = "";
 
