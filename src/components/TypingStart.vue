@@ -101,6 +101,11 @@ export default {
         this.$refs.input.value = "";
       }
     },
+    focusInput: function() {
+      if (this.$refs.input && this.active) {
+        this.$refs.input.focus();
+      }
+    },
     resetKanaProgress: function() {
       this.pressedKana = "";
       this.hiragana2 = this.toHiragana(this.kata);
@@ -123,6 +128,15 @@ export default {
         return;
       }
 
+      // IME can emit several input events while a kana is still being composed.
+      // Judge only the committed value; otherwise an intermediate candidate can
+      // be mistaken for a typo (including just after completing a word).
+      const expectedKana = this.hiragana2[0];
+      const expectedBase = PENDING_KANA_BASES[expectedKana];
+      if ((event.isComposing || event.target.composing) && !expectedBase) {
+        return;
+      }
+
       const rawInput = this.toHiragana(event.target.value.normalize("NFKC").normalize("NFC"));
       const eventInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
       let input = eventInput || rawInput;
@@ -136,8 +150,6 @@ export default {
         return;
       }
 
-      const expectedKana = this.hiragana2[0];
-      const expectedBase = PENDING_KANA_BASES[expectedKana];
       const intermediateKana = HAN_DAKUTEN_INTERMEDIATE_KANA[expectedKana];
 
       const hasDakutenMark = event.data && Array.from(event.data).some((character) =>
@@ -189,7 +201,7 @@ export default {
           return;
         } else if (this.pendingKana) {
           this.registerMistype();
-          this.resetKanaInput();
+          this.resetKanaProgress();
           return;
         }
       }
@@ -210,7 +222,7 @@ export default {
       for (const key of input) {
         if (this.hiragana2[0] !== key) {
           this.registerMistype();
-          this.resetKanaInput();
+          this.resetKanaProgress();
           return;
         }
 
@@ -248,7 +260,6 @@ export default {
 
                 const inputElement = this.$refs.input;
                 if (inputElement) {
-                  inputElement.blur();
                   inputElement.value = "";
                 }
                 this.$nextTick(() => {
@@ -268,7 +279,7 @@ export default {
   mounted() {
       if (this.$mq === "sp") {
           this.$nextTick(() => {
-              this.$refs.input.focus();
+              this.focusInput();
           });
       }
   },
