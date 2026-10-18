@@ -64,7 +64,7 @@ export default {
                 }
             },1000); 
         } else if (this.$mq === "pc" && this.currentComponent === "typingstart") {
-            this.$refs.foo.Judge(event.key);
+            this.$refs.foo.judgePcKey(event.key);
             }
         },
        RandomWord() {
