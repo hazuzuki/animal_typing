@@ -14,7 +14,7 @@
       :key="num + ':' + inputResetKey"
       ref="input"
       v-if="$mq === 'sp'"
-      @input="JudgeKana"
+      @input="handleMobileInput"
       type="text"
     />
   </div>
@@ -62,7 +62,7 @@ export default {
       }
   },
   methods: {
-    Judge: function(key) {
+    judgePcKey: function(key) {
       if (!this.active || this.advancingToNextWord) {
         return false;
       }
@@ -71,19 +71,27 @@ export default {
         this.roman2 = this.roman2.slice(1);
         this.pressed += key;
         if(this.roman2.length == 0) {
-          this.$emit('RandomWord');
-          this.pressed = "";
-          this.roman2 = this.roman;
-          this.count += 1;
-          this.audio.play();
-          this.typed_animal.push(this.num);
-          this.SendSumCount();
+          this.completeWord();
         }
       } else {
-        this.buzzeraudio.play();
-        this.misscount += 1;
+        this.registerMistype();
       }
       return true
+    },
+    registerMistype: function() {
+      this.buzzeraudio.play();
+      this.misscount += 1;
+    },
+    completeWord: function() {
+      this.advancingToNextWord = true;
+      this.pressed = "";
+      this.pressedKana = "";
+      this.pendingKana = "";
+      this.count += 1;
+      this.audio.play();
+      this.typed_animal.push(this.num);
+      this.SendSumCount();
+      this.$emit('RandomWord');
     },
     stopInput: function() {
       this.advancingToNextWord = true;
@@ -96,7 +104,6 @@ export default {
     resetKanaProgress: function() {
       this.pressedKana = "";
       this.hiragana2 = this.toHiragana(this.kata);
-      this.pendingKana = "";
       this.advancingToNextWord = true;
       this.inputResetKey += 1;
       this.$nextTick(() => {
@@ -110,7 +117,7 @@ export default {
         }
       });
     },
-    JudgeKana: function(event) {
+    handleMobileInput: function(event) {
       if (!this.active || this.advancingToNextWord || event.target !== this.$refs.input) {
         event.target.value = "";
         return;
@@ -181,9 +188,8 @@ export default {
         } else if (this.pendingKana === expectedBase && !input) {
           return;
         } else if (this.pendingKana) {
-          this.buzzeraudio.play();
-          this.misscount += 1;
-          this.resetKanaProgress();
+          this.registerMistype();
+          this.resetKanaInput();
           return;
         }
       }
@@ -203,9 +209,8 @@ export default {
 
       for (const key of input) {
         if (this.hiragana2[0] !== key) {
-          this.buzzeraudio.play();
-          this.misscount += 1;
-          this.resetKanaProgress();
+          this.registerMistype();
+          this.resetKanaInput();
           return;
         }
 
@@ -215,15 +220,8 @@ export default {
         this.lastAcceptedKanaAt = event.timeStamp;
 
         if (this.hiragana2.length === 0) {
-          this.advancingToNextWord = true;
-          this.$emit('RandomWord');
-          this.pressedKana = "";
-          this.pendingKana = "";
+          this.completeWord();
           this.$refs.input.value = "";
-          this.count += 1;
-          this.audio.play();
-          this.typed_animal.push(this.num);
-          this.SendSumCount();
           break;
         }
       }
@@ -252,15 +250,17 @@ export default {
                 if (inputElement) {
                   inputElement.blur();
                   inputElement.value = "";
-                  this.$nextTick(() => {
-                    const currentInput = this.$refs.input;
-                    if (currentInput) {
-                      currentInput.value = "";
-                      this.advancingToNextWord = false;
+                }
+                this.$nextTick(() => {
+                  this.advancingToNextWord = false;
+                  const currentInput = this.$refs.input;
+                  if (currentInput) {
+                    currentInput.value = "";
+                    if (this.active) {
                       currentInput.focus();
                     }
-                  });
-                }
+                  }
+                });
           }
       }
   },
