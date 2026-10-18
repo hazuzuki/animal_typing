@@ -21,13 +21,16 @@
 
 <script>
 
-const VOICED_KANA_BASES = {
+const PENDING_KANA_BASES = {
   が: "か", ぎ: "き", ぐ: "く", げ: "け", ご: "こ",
   ざ: "さ", じ: "し", ず: "す", ぜ: "せ", ぞ: "そ",
   だ: "た", ぢ: "ち", づ: "つ", で: "て", ど: "と",
   ば: "は", び: "ひ", ぶ: "ふ", べ: "へ", ぼ: "ほ",
   ぱ: "は", ぴ: "ひ", ぷ: "ふ", ぺ: "へ", ぽ: "ほ",
   ゔ: "う",
+  ぁ: "あ", ぃ: "い", ぅ: "う", ぇ: "え", ぉ: "お",
+  っ: "つ", ゃ: "や", ゅ: "ゆ", ょ: "よ", ゎ: "わ",
+  ゕ: "か", ゖ: "け",
 };
 
 export default {
@@ -101,7 +104,7 @@ export default {
       }
 
       const firstKey = Array.from(input)[0];
-      if (firstKey && VOICED_KANA_BASES[this.hiragana2[0]] === firstKey) {
+      if (firstKey && PENDING_KANA_BASES[this.hiragana2[0]] === firstKey) {
         this.pendingKana = firstKey;
         return;
       }
@@ -151,8 +154,18 @@ export default {
               this.hiragana2 = this.toHiragana(this.kata);
               this.pressedKana = "";
                 this.pendingKana = "";
-                if (this.$refs.input) {
-                  this.$refs.input.value = "";
+
+                const inputElement = this.$refs.input;
+                if (inputElement) {
+                  inputElement.blur();
+                  inputElement.value = "";
+                  this.$nextTick(() => {
+                    const currentInput = this.$refs.input;
+                    if (currentInput) {
+                      currentInput.value = "";
+                      currentInput.focus();
+                    }
+                  });
                 }
           }
       }
@@ -165,14 +178,6 @@ export default {
           });
       }
   },
-
-  updated() {
-      if (this.$mq === "sp") {
-          this.$nextTick(() => {
-              this.$refs.input.focus();
-          });
-      }
-},
 
 name: 'App',
 }
