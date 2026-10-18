@@ -54,6 +54,9 @@ export default {
         ) {
             this.currentComponent = "typingstart";
             this.RandomWord();
+            if (this.$mq === "sp") {
+                this.$refs.foo.focusInput();
+            }
             var tmp = this;
             const timerID = setInterval(function(){
                 tmp.PassSec -= 1;
