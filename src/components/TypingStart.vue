@@ -21,6 +21,15 @@
 
 <script>
 
+const VOICED_KANA_BASES = {
+  が: "か", ぎ: "き", ぐ: "く", げ: "け", ご: "こ",
+  ざ: "さ", じ: "し", ず: "す", ぜ: "せ", ぞ: "そ",
+  だ: "た", ぢ: "ち", づ: "つ", で: "て", ど: "と",
+  ば: "は", び: "ひ", ぶ: "ふ", べ: "へ", ぼ: "ほ",
+  ぱ: "は", ぴ: "ひ", ぷ: "ふ", ぺ: "へ", ぽ: "ほ",
+  ゔ: "う",
+};
+
 export default {
     devServer: {
     Host: 'localhost'
@@ -37,6 +46,7 @@ export default {
       typed_animal: [],
       hiragana2: "",
       pressedKana: "",
+      pendingKana: "",
       }
   },
   methods: {
@@ -60,12 +70,44 @@ export default {
       return true
     },
     JudgeKana: function(event) {
-      let input = event.data === null ? event.target.value : event.data;
-      event.target.value = "";
+      const rawInput = event.target.value.normalize("NFKC").normalize("NFC");
+      let input = event.data || rawInput || "";
+
+      const hasDakutenMark = event.data && Array.from(event.data).some((character) =>
+        character === "゛" || character === "゜" || character === "\u3099" || character === "\u309a"
+      );
+      if (hasDakutenMark && rawInput) {
+        input = rawInput;
+      }
+
+      if (this.pendingKana) {
+        const expectedKana = this.hiragana2[0];
+        if (input.includes(expectedKana)) {
+          input = input.slice(input.indexOf(expectedKana));
+          this.pendingKana = "";
+        } else if (rawInput.includes(expectedKana)) {
+          input = expectedKana;
+          this.pendingKana = "";
+        } else {
+          this.buzzeraudio.play();
+          this.misscount += 1;
+          this.pendingKana = "";
+          input = event.data || rawInput || "";
+        }
+      }
 
       if (input.startsWith(this.pressedKana) && input.length > this.pressedKana.length) {
         input = input.slice(this.pressedKana.length);
       }
+
+      const firstKey = Array.from(input)[0];
+      if (firstKey && VOICED_KANA_BASES[this.hiragana2[0]] === firstKey) {
+        this.pendingKana = firstKey;
+        return;
+      }
+
+      event.target.value = "";
+      this.pendingKana = "";
 
       for (const key of input) {
         if (this.hiragana2[0] !== key) {
@@ -80,6 +122,8 @@ export default {
         if (this.hiragana2.length === 0) {
           this.$emit('RandomWord');
           this.pressedKana = "";
+          this.pendingKana = "";
+          this.$refs.input.value = "";
           this.count += 1;
           this.audio.play();
           this.typed_animal.push(this.num);
@@ -106,6 +150,10 @@ export default {
               this.roman2 = this.roman;
               this.hiragana2 = this.toHiragana(this.kata);
               this.pressedKana = "";
+                this.pendingKana = "";
+                if (this.$refs.input) {
+                  this.$refs.input.value = "";
+                }
           }
       }
   },
