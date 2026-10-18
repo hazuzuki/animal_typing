@@ -11,6 +11,7 @@
       <span class="done">{{ pressed }}</span>{{ roman2 }}
     </p>
     <input
+      :key="num"
       ref="input"
       v-if="$mq === 'sp'"
       @input="JudgeKana"
@@ -85,10 +86,27 @@ export default {
 
       if (this.pendingKana) {
         const expectedKana = this.hiragana2[0];
+        const expectedBase = PENDING_KANA_BASES[expectedKana];
+        const isHandakutenKana = "ぱぴぷぺぽ".includes(expectedKana);
+        const hasExpectedMark = event.data && Array.from(event.data).some((character) =>
+          isHandakutenKana
+            ? character === "゜" || character === "\u309a"
+            : character === "゛" || character === "\u3099"
+        );
+
         if (input.includes(expectedKana)) {
           input = input.slice(input.indexOf(expectedKana));
           this.pendingKana = "";
         } else if (rawInput.includes(expectedKana)) {
+          input = expectedKana;
+          this.pendingKana = "";
+        } else if (
+          input === this.pendingKana ||
+          rawInput === this.pendingKana ||
+          rawInput.endsWith(this.pendingKana)
+        ) {
+          return;
+        } else if (expectedBase === this.pendingKana && hasExpectedMark) {
           input = expectedKana;
           this.pendingKana = "";
         } else {
