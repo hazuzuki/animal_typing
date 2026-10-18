@@ -11,7 +11,7 @@
         </div>        
     </header>  
     <typingtop v-show="currentComponent === 'typingtop'" @gameStart="gameStart"></typingtop>
-    <typingstart v-show="currentComponent === 'typingstart'" :kata="kata" :roman="roman" :PassSec="PassSec" :num="num" @RandomWord="RandomWord" @SendSumCount="SendSumCount2" @TypedAnimal="TypedAnimal" @MissCount="MissCount" ref="foo"></typingstart>
+    <typingstart v-show="currentComponent === 'typingstart'" :active="currentComponent === 'typingstart'" :kata="kata" :roman="roman" :PassSec="PassSec" :num="num" @RandomWord="RandomWord" @SendSumCount="SendSumCount2" @TypedAnimal="TypedAnimal" @MissCount="MissCount" ref="foo"></typingstart>
     <typingresult v-show="currentComponent === 'typingresult'" :sumcount="sumcount" :typing="typing" :Typed_animal="Typed_animal" :misscount="misscount"></typingresult>
   </div>
 </template>
@@ -58,11 +58,12 @@ export default {
             const timerID = setInterval(function(){
                 tmp.PassSec -= 1;
                 if(tmp.PassSec === 0) {
+                    tmp.$refs.foo.stopInput();
                     tmp.currentComponent = "typingresult";
                     clearInterval(timerID); 
                 }
             },1000); 
-        } else if (this.$mq === "pc") {
+        } else if (this.$mq === "pc" && this.currentComponent === "typingstart") {
             this.$refs.foo.Judge(event.key);
             }
         },

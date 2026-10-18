@@ -11,7 +11,7 @@
       <span class="done">{{ pressed }}</span>{{ roman2 }}
     </p>
     <input
-      :key="num"
+      :key="num + ':' + inputResetKey"
       ref="input"
       v-if="$mq === 'sp'"
       @input="JudgeKana"
@@ -34,11 +34,15 @@ const PENDING_KANA_BASES = {
   ゕ: "か", ゖ: "け",
 };
 
+const HAN_DAKUTEN_INTERMEDIATE_KANA = {
+  ぱ: "ば", ぴ: "び", ぷ: "ぶ", ぺ: "べ", ぽ: "ぼ",
+};
+
 export default {
     devServer: {
     Host: 'localhost'
     },
-    props: ["kata", "roman", "PassSec", "num"],
+    props: ["kata", "roman", "PassSec", "num", "active"],
   data: function() {
     return{
       audio: new Audio(require('@/assets/Quiz-Correct_Answer02-1.mp3')),
@@ -51,10 +55,16 @@ export default {
       hiragana2: "",
       pressedKana: "",
       pendingKana: "",
+      advancingToNextWord: false,
+      inputResetKey: 0,
       }
   },
   methods: {
     Judge: function(key) {
+      if (!this.active || this.advancingToNextWord) {
+        return false;
+      }
+
       if(this.roman2.split('')[0] === key) {
         this.roman2 = this.roman2.slice(1);
         this.pressed += key;
@@ -73,9 +83,43 @@ export default {
       }
       return true
     },
+    stopInput: function() {
+      this.advancingToNextWord = true;
+      this.pendingKana = "";
+      if (this.$refs.input) {
+        this.$refs.input.blur();
+        this.$refs.input.value = "";
+      }
+    },
+    resetKanaProgress: function() {
+      this.pressedKana = "";
+      this.hiragana2 = this.toHiragana(this.kata);
+      this.pendingKana = "";
+      this.advancingToNextWord = true;
+      this.inputResetKey += 1;
+      this.$nextTick(() => {
+        const inputElement = this.$refs.input;
+        if (inputElement) {
+          inputElement.value = "";
+          this.advancingToNextWord = false;
+          if (this.active) {
+            inputElement.focus();
+          }
+        }
+      });
+    },
     JudgeKana: function(event) {
+      if (!this.active || this.advancingToNextWord || event.target !== this.$refs.input) {
+        event.target.value = "";
+        return;
+      }
+
       const rawInput = event.target.value.normalize("NFKC").normalize("NFC");
-      let input = event.data || rawInput || "";
+      const eventInput = (event.data || "").normalize("NFKC").normalize("NFC");
+      let input = eventInput || rawInput;
+      const expectedKana = this.hiragana2[0];
+      const expectedBase = PENDING_KANA_BASES[expectedKana];
+      const intermediateKana = HAN_DAKUTEN_INTERMEDIATE_KANA[expectedKana];
 
       const hasDakutenMark = event.data && Array.from(event.data).some((character) =>
         character === "゛" || character === "゜" || character === "\u3099" || character === "\u309a"
@@ -84,9 +128,13 @@ export default {
         input = rawInput;
       }
 
-      if (this.pendingKana) {
-        const expectedKana = this.hiragana2[0];
-        const expectedBase = PENDING_KANA_BASES[expectedKana];
+      if (input.startsWith(this.pressedKana) && input.length > this.pressedKana.length) {
+        input = input.slice(this.pressedKana.length);
+      }
+
+      if (expectedBase) {
+        const completedKanaIndex = input.indexOf(expectedKana);
+        const rawCompletedKanaIndex = rawInput.indexOf(expectedKana);
         const isHandakutenKana = "ぱぴぷぺぽ".includes(expectedKana);
         const hasExpectedMark = event.data && Array.from(event.data).some((character) =>
           isHandakutenKana
@@ -94,34 +142,45 @@ export default {
             : character === "゛" || character === "\u3099"
         );
 
-        if (input.includes(expectedKana)) {
-          input = input.slice(input.indexOf(expectedKana));
+        if (completedKanaIndex >= 0) {
+          input = input.slice(completedKanaIndex);
           this.pendingKana = "";
-        } else if (rawInput.includes(expectedKana)) {
+        } else if (rawCompletedKanaIndex >= 0) {
+          input = rawInput.slice(rawCompletedKanaIndex);
+          this.pendingKana = "";
+        } else if (hasExpectedMark && this.pendingKana === expectedBase) {
           input = expectedKana;
           this.pendingKana = "";
         } else if (
-          input === this.pendingKana ||
-          rawInput === this.pendingKana ||
-          rawInput.endsWith(this.pendingKana)
+          intermediateKana &&
+          (input.endsWith(intermediateKana) || rawInput.endsWith(intermediateKana))
         ) {
+          this.pendingKana = expectedBase;
           return;
-        } else if (expectedBase === this.pendingKana && hasExpectedMark) {
-          input = expectedKana;
-          this.pendingKana = "";
-        } else {
+        } else if (
+          input === expectedBase ||
+          input.endsWith(expectedBase) ||
+          rawInput.endsWith(expectedBase)
+        ) {
+          this.pendingKana = expectedBase;
+          return;
+        } else if (event.isComposing || event.target.composing) {
+          return;
+        } else if (this.pendingKana === expectedBase && !input) {
+          return;
+        } else if (this.pendingKana) {
           this.buzzeraudio.play();
           this.misscount += 1;
-          this.pendingKana = "";
-          input = event.data || rawInput || "";
+          this.resetKanaProgress();
+          return;
         }
       }
 
-      if (input.startsWith(this.pressedKana) && input.length > this.pressedKana.length) {
-        input = input.slice(this.pressedKana.length);
-      }
-
       const firstKey = Array.from(input)[0];
+      if (firstKey && intermediateKana === firstKey) {
+        this.pendingKana = expectedBase;
+        return;
+      }
       if (firstKey && PENDING_KANA_BASES[this.hiragana2[0]] === firstKey) {
         this.pendingKana = firstKey;
         return;
@@ -134,13 +193,15 @@ export default {
         if (this.hiragana2[0] !== key) {
           this.buzzeraudio.play();
           this.misscount += 1;
-          break;
+          this.resetKanaProgress();
+          return;
         }
 
         this.pressedKana += key;
         this.hiragana2 = this.hiragana2.slice(1);
 
         if (this.hiragana2.length === 0) {
+          this.advancingToNextWord = true;
           this.$emit('RandomWord');
           this.pressedKana = "";
           this.pendingKana = "";
@@ -181,6 +242,7 @@ export default {
                     const currentInput = this.$refs.input;
                     if (currentInput) {
                       currentInput.value = "";
+                      this.advancingToNextWord = false;
                       currentInput.focus();
                     }
                   });
