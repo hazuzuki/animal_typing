@@ -86,6 +86,7 @@ export default {
     registerMistype: function() {
       this.buzzeraudio.play();
       this.misscount += 1;
+      this.$emit('MissCount', this.misscount);
     },
     completeWord: function() {
       this.advancingToNextWord = true;
@@ -110,22 +111,6 @@ export default {
       if (this.$refs.input && this.active) {
         this.$refs.input.focus();
       }
-    },
-    resetKanaProgress: function() {
-      this.pressedKana = "";
-      this.hiragana2 = this.toHiragana(this.kata);
-      this.advancingToNextWord = true;
-      this.inputResetKey += 1;
-      this.$nextTick(() => {
-        const inputElement = this.$refs.input;
-        if (inputElement) {
-          inputElement.value = "";
-          this.advancingToNextWord = false;
-          if (this.active) {
-            inputElement.focus();
-          }
-        }
-      });
     },
     handleMobileInput: function(event) {
       if (!this.active || this.advancingToNextWord || event.target !== this.$refs.input) {
@@ -225,7 +210,8 @@ export default {
           return;
         } else if (this.pendingKana) {
           this.registerMistype();
-          this.resetKanaProgress();
+          this.pendingKana = "";
+          event.target.value = "";
           return;
         }
       }
@@ -261,7 +247,6 @@ export default {
       for (const key of input) {
         if (this.hiragana2[0] !== key) {
           this.registerMistype();
-          this.resetKanaProgress();
           return;
         }
 
@@ -286,8 +271,13 @@ export default {
       }
 
       // Input events are judged as they arrive, including during composition.
-      // Do not judge the same text again when the IME later commits it.
-      if (!this.pressedKana.endsWith(committedInput)) {
+      // IMEs can report the base kana (for example ほ) at compositionend even
+      // when the input event already produced its voiced form (ぼ).
+      const lastAcceptedBase = PENDING_KANA_BASES[this.lastAcceptedKana];
+      const sameAsRecentAccepted =
+        event.timeStamp - this.lastAcceptedKanaAt < 250 &&
+        (committedInput === this.lastAcceptedKana || committedInput === lastAcceptedBase);
+      if (!this.pressedKana.endsWith(committedInput) && !sameAsRecentAccepted) {
         this.handleMobileInput({
           target: event.target,
           data: committedInput,
