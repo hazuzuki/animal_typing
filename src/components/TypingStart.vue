@@ -14,6 +14,7 @@
       ref="input"
       v-if="$mq === 'sp'"
       @input="handleMobileInput"
+      @compositionstart="handleMobileCompositionStart"
       @compositionend="handleMobileCompositionEnd"
       type="text"
     />
@@ -53,6 +54,8 @@ export default {
       pressedKana: "",
       pendingKana: "",
       advancingToNextWord: false,
+      mobileWordId: 0,
+      mobileComposing: false,
       lastMobileInput: null,
       suppressNextMobileInput: null,
       }
@@ -104,6 +107,9 @@ export default {
         this.$refs.input.focus();
       }
     },
+    handleMobileCompositionStart: function() {
+      this.mobileComposing = true;
+    },
     handleMobileInput: function(event) {
       const inputElement = event.target;
       if (!this.active || this.advancingToNextWord || inputElement !== this.$refs.input) {
@@ -113,7 +119,10 @@ export default {
 
       const fromInputValue = !event.data;
       const text = this.normalizeMobileInput(event.data || inputElement.value);
-      const isComposing = event.isComposing || event.inputType === "insertCompositionText";
+      // inputType can remain insertCompositionText for a committed iOS input.
+      // Use the composition lifecycle (and isComposing) to avoid swallowing a
+      // real typo that never receives another composition event.
+      const isComposing = event.isComposing || this.mobileComposing;
       const suppressed = this.suppressNextMobileInput;
       this.suppressNextMobileInput = null;
 
@@ -126,14 +135,14 @@ export default {
       }
 
       if (isComposing && !this.isExpectedCompositionCandidate(text, fromInputValue)) {
-        this.lastMobileInput = { text, handled: false, timeStamp: event.timeStamp };
+        this.lastMobileInput = { text, handled: false, timeStamp: event.timeStamp, wordId: this.mobileWordId };
         return;
       }
 
       const handled = text
         ? this.processMobileKana(text, isComposing, fromInputValue)
         : false;
-      this.lastMobileInput = { text, handled, timeStamp: event.timeStamp };
+      this.lastMobileInput = { text, handled, timeStamp: event.timeStamp, wordId: this.mobileWordId };
 
       // Keep the active IME composition intact. Once it commits, compositionend
       // clears the field so old text cannot leak into the next input.
@@ -142,6 +151,7 @@ export default {
       }
     },
     handleMobileCompositionEnd: function(event) {
+      this.mobileComposing = false;
       const inputElement = event.target;
       if (inputElement !== this.$refs.input) {
         inputElement.value = "";
@@ -150,6 +160,15 @@ export default {
       const fromInputValue = !event.data;
       const text = this.normalizeMobileInput(event.data || inputElement.value);
       const previous = this.lastMobileInput;
+      // A composition may finish after the final kana has already completed
+      // the word and the next word has been loaded. Never replay that commit.
+      if (previous && previous.wordId !== this.mobileWordId) {
+        this.suppressNextMobileInput = text
+          ? { text, timeStamp: event.timeStamp }
+          : null;
+        inputElement.value = "";
+        return;
+      }
       const alreadyHandled = previous && previous.handled && (
         previous.text === text || this.pressedKana.endsWith(text)
       );
@@ -274,6 +293,10 @@ export default {
       roman: {
           immediate: true,
           handler() {
+              this.mobileWordId += 1;
+              this.mobileComposing = false;
+              this.lastMobileInput = null;
+              this.suppressNextMobileInput = null;
               this.roman2 = this.roman;
               this.hiragana2 = this.toHiragana(this.kata);
               this.pressedKana = "";
