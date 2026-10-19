@@ -130,6 +130,7 @@ export default {
     },
     handleMobileInput: function(event) {
       const inputElement = event.target;
+      const inputKey = this.mobileInputKey;
       if (!this.active || this.advancingToNextWord || inputElement !== this.$refs.input) {
         inputElement.value = "";
         return;
@@ -171,7 +172,13 @@ export default {
       if (text && this.mobileCompositionWordId === this.mobileWordId && handled) {
         this.mobileCompositionInputHandled = true;
       }
-      this.lastMobileInput = { text, handled, timeStamp: event.timeStamp, wordId: this.mobileWordId };
+      this.lastMobileInput = {
+        text,
+        handled,
+        timeStamp: event.timeStamp,
+        wordId: this.mobileWordId,
+        inputKey,
+      };
 
       // Clear each delivered kana immediately, including composition updates,
       // so the next kana cannot inherit the previous conversion buffer.
@@ -210,6 +217,12 @@ export default {
       const fromInputValue = !event.data;
       const text = this.normalizeMobileInput(event.data || inputElement.value);
       const previous = this.lastMobileInput;
+      // Correct kana replace the input node. Ignore a compositionend associated
+      // with a previous node instead of judging it at the next kana position.
+      if (previous && previous.inputKey !== this.mobileInputKey) {
+        inputElement.value = "";
+        return;
+      }
       // A delayed compositionend from the previous key must not be judged
       // against the position reached by a newer key event.
       if (previous && previous.wordId === this.mobileWordId && previous.timeStamp > event.timeStamp) {
