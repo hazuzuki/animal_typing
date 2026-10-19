@@ -62,6 +62,8 @@ export default {
       lastAcceptedKanaAt: 0,
       lastCompositionInput: "",
       lastCompositionInputAt: 0,
+      lastCompletedKana: "",
+      lastCompletedAt: 0,
       }
   },
   methods: {
@@ -137,6 +139,19 @@ export default {
       const rawInput = this.toHiragana(event.target.value.normalize("NFKC").normalize("NFC"));
       const eventInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
       let input = eventInput || rawInput;
+
+      // A mobile IME may send the completed kana again after the word has
+      // advanced. Ignore that trailing commit instead of judging it as a typo
+      // in the next word.
+      if (
+        input &&
+        this.lastCompletedKana &&
+        event.timeStamp - this.lastCompletedAt < 250 &&
+        this.lastCompletedKana.endsWith(input)
+      ) {
+        event.target.value = "";
+        return;
+      }
 
       if (
         input &&
@@ -256,6 +271,8 @@ export default {
         this.lastAcceptedKanaAt = event.timeStamp;
 
         if (this.hiragana2.length === 0) {
+          this.lastCompletedKana = this.pressedKana;
+          this.lastCompletedAt = event.timeStamp;
           this.completeWord();
           this.$refs.input.value = "";
           break;
