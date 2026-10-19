@@ -11,7 +11,6 @@
       <span class="done">{{ pressed }}</span>{{ roman2 }}
     </p>
     <input
-      :key="num + ':' + inputResetKey"
       ref="input"
       v-if="$mq === 'sp'"
       @input="handleMobileInput"
@@ -30,9 +29,6 @@ const PENDING_KANA_BASES = {
   ば: "は", び: "ひ", ぶ: "ふ", べ: "へ", ぼ: "ほ",
   ぱ: "は", ぴ: "ひ", ぷ: "ふ", ぺ: "へ", ぽ: "ほ",
   ゔ: "う",
-  ぁ: "あ", ぃ: "い", ぅ: "う", ぇ: "え", ぉ: "お",
-  っ: "つ", ゃ: "や", ゅ: "ゆ", ょ: "よ", ゎ: "わ",
-  ゕ: "か", ゖ: "け",
 };
 
 const HAN_DAKUTEN_INTERMEDIATE_KANA = {
@@ -57,13 +53,8 @@ export default {
       pressedKana: "",
       pendingKana: "",
       advancingToNextWord: false,
-      inputResetKey: 0,
-      lastAcceptedKana: "",
-      lastAcceptedKanaAt: 0,
-      lastCompositionInput: "",
-      lastCompositionInputAt: 0,
-      lastCompletedKana: "",
-      lastCompletedAt: 0,
+      lastMobileInput: null,
+      suppressNextMobileInput: null,
       }
   },
   methods: {
@@ -73,7 +64,6 @@ export default {
       }
 
       if(this.roman2.split('')[0] === key) {
-        this.stopMistypeSound();
         this.roman2 = this.roman2.slice(1);
         this.pressed += key;
         if(this.roman2.length == 0) {
@@ -89,10 +79,6 @@ export default {
       this.buzzeraudio.play();
       this.misscount += 1;
       this.$emit('MissCount', this.misscount);
-    },
-    stopMistypeSound: function() {
-      this.buzzeraudio.pause();
-      this.buzzeraudio.currentTime = 0;
     },
     completeWord: function() {
       this.advancingToNextWord = true;
@@ -119,188 +105,159 @@ export default {
       }
     },
     handleMobileInput: function(event) {
-      if (!this.active || this.advancingToNextWord || event.target !== this.$refs.input) {
-        event.target.value = "";
+      const inputElement = event.target;
+      if (!this.active || this.advancingToNextWord || inputElement !== this.$refs.input) {
+        inputElement.value = "";
         return;
+      }
+
+      const fromInputValue = !event.data;
+      const text = this.normalizeMobileInput(event.data || inputElement.value);
+      const isComposing = event.isComposing || event.inputType === "insertCompositionText";
+      const suppressed = this.suppressNextMobileInput;
+      this.suppressNextMobileInput = null;
+
+      if (
+        text && suppressed && text === suppressed.text &&
+        event.timeStamp - suppressed.timeStamp < 100
+      ) {
+        inputElement.value = "";
+        return;
+      }
+
+      if (isComposing && !this.isExpectedCompositionCandidate(text, fromInputValue)) {
+        this.lastMobileInput = { text, handled: false, timeStamp: event.timeStamp };
+        return;
+      }
+
+      const handled = text
+        ? this.processMobileKana(text, isComposing, fromInputValue)
+        : false;
+      this.lastMobileInput = { text, handled, timeStamp: event.timeStamp };
+
+      // Keep the active IME composition intact. Once it commits, compositionend
+      // clears the field so old text cannot leak into the next input.
+      if (!isComposing) {
+        inputElement.value = "";
+      }
+    },
+    handleMobileCompositionEnd: function(event) {
+      const inputElement = event.target;
+      if (inputElement !== this.$refs.input) {
+        inputElement.value = "";
+        return;
+      }
+      const fromInputValue = !event.data;
+      const text = this.normalizeMobileInput(event.data || inputElement.value);
+      const previous = this.lastMobileInput;
+      const alreadyHandled = previous && previous.handled && (
+        previous.text === text || this.pressedKana.endsWith(text)
+      );
+
+      if (text && !alreadyHandled && this.active && !this.advancingToNextWord) {
+        this.processMobileKana(text, false, fromInputValue);
+      }
+
+      this.suppressNextMobileInput = text
+        ? { text, timeStamp: event.timeStamp }
+        : null;
+      inputElement.value = "";
+    },
+    isExpectedCompositionCandidate: function(text, fromInputValue) {
+      let candidate = text;
+      if (
+        candidate.startsWith(this.pressedKana) &&
+        (candidate.length > this.pressedKana.length || fromInputValue)
+      ) {
+        candidate = candidate.slice(this.pressedKana.length);
+      }
+
+      if (this.pressedKana.endsWith(candidate)) {
+        return true;
       }
 
       const expectedKana = this.hiragana2[0];
       const expectedBase = PENDING_KANA_BASES[expectedKana];
-
-      const rawInput = this.toHiragana(event.target.value.normalize("NFKC").normalize("NFC"));
-      const eventInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
-      let input = eventInput || rawInput;
-
-      // A mobile IME may send the completed kana again after the word has
-      // advanced. Ignore that trailing commit instead of judging it as a typo
-      // in the next word.
+      return candidate === expectedKana ||
+        candidate === expectedBase ||
+        candidate === HAN_DAKUTEN_INTERMEDIATE_KANA[expectedKana] ||
+        (this.pendingKana && (candidate === "゛" || candidate === "゜" || candidate === "\u3099" || candidate === "\u309a"));
+    },
+    processMobileKana: function(text, isComposing, fromInputValue) {
+      let input = text;
       if (
-        input &&
-        this.lastCompletedKana &&
-        event.timeStamp - this.lastCompletedAt < 250 &&
-        this.lastCompletedKana.endsWith(input)
+        input.startsWith(this.pressedKana) &&
+        (input.length > this.pressedKana.length || fromInputValue)
       ) {
-        event.target.value = "";
-        return;
-      }
-
-      if (
-        input &&
-        input === this.lastCompositionInput &&
-        event.timeStamp - this.lastCompositionInputAt < 250
-      ) {
-        this.lastCompositionInput = "";
-        event.target.value = "";
-        return;
-      }
-
-      this.lastCompositionInput = "";
-
-      if (
-        input &&
-        input === this.lastAcceptedKana &&
-        event.timeStamp - this.lastAcceptedKanaAt < 250
-      ) {
-        event.target.value = "";
-        return;
-      }
-
-      const intermediateKana = HAN_DAKUTEN_INTERMEDIATE_KANA[expectedKana];
-
-      const hasDakutenMark = event.data && Array.from(event.data).some((character) =>
-        character === "゛" || character === "゜" || character === "\u3099" || character === "\u309a"
-      );
-      if (hasDakutenMark && rawInput) {
-        input = rawInput;
-      }
-
-      if (input.startsWith(this.pressedKana) && input.length > this.pressedKana.length) {
         input = input.slice(this.pressedKana.length);
       }
 
-      if (expectedBase) {
-        const completedKanaIndex = input.indexOf(expectedKana);
-        const rawCompletedKanaIndex = rawInput.indexOf(expectedKana);
-        const isHandakutenKana = "ぱぴぷぺぽ".includes(expectedKana);
-        const hasExpectedMark = event.data && Array.from(event.data).some((character) =>
-          isHandakutenKana
-            ? character === "゜" || character === "\u309a"
-            : character === "゛" || character === "\u3099"
-        );
-
-        if (completedKanaIndex >= 0) {
-          input = input.slice(completedKanaIndex);
-          this.pendingKana = "";
-        } else if (rawCompletedKanaIndex >= 0) {
-          input = rawInput.slice(rawCompletedKanaIndex);
-          this.pendingKana = "";
-        } else if (hasExpectedMark && this.pendingKana === expectedBase) {
-          input = expectedKana;
-          this.pendingKana = "";
-        } else if (
-          intermediateKana &&
-          (input.endsWith(intermediateKana) || rawInput.endsWith(intermediateKana))
-        ) {
-          this.pendingKana = expectedBase;
-          event.target.value = "";
-          return;
-        } else if (
-          input === expectedBase ||
-          input.endsWith(expectedBase) ||
-          rawInput.endsWith(expectedBase)
-        ) {
-          this.pendingKana = expectedBase;
-          event.target.value = "";
-          return;
-        } else if (event.isComposing || event.target.composing) {
-          return;
-        } else if (this.pendingKana === expectedBase && !input) {
-          event.target.value = "";
-          return;
-        } else if (this.pendingKana) {
-          this.registerMistype();
-          this.pendingKana = "";
-          event.target.value = "";
-          return;
-        }
-      }
-
-      let firstKey = Array.from(input)[0];
-      if (firstKey !== this.hiragana2[0] && rawInput) {
-        let rawCandidate = rawInput;
-        if (rawCandidate.startsWith(this.pressedKana)) {
-          rawCandidate = rawCandidate.slice(this.pressedKana.length);
-        }
-        const rawFirstKey = Array.from(rawCandidate)[0];
-        if (
-          rawFirstKey === this.hiragana2[0] ||
-          rawFirstKey === PENDING_KANA_BASES[this.hiragana2[0]]
-        ) {
-          input = rawCandidate;
-          firstKey = rawFirstKey;
-        }
-      }
-
-      if (firstKey && intermediateKana === firstKey) {
-        this.pendingKana = expectedBase;
-        event.target.value = "";
-        return;
-      }
-      if (firstKey && PENDING_KANA_BASES[this.hiragana2[0]] === firstKey) {
-        this.pendingKana = firstKey;
-        event.target.value = "";
-        return;
-      }
-
-      event.target.value = "";
-      this.pendingKana = "";
-
-      for (const key of input) {
-        if (this.hiragana2[0] !== key) {
-          this.registerMistype();
-          return;
-        }
-
-        this.stopMistypeSound();
-        this.pressedKana += key;
-        this.hiragana2 = this.hiragana2.slice(1);
-        this.lastAcceptedKana = key;
-        this.lastAcceptedKanaAt = event.timeStamp;
-
-        if (this.hiragana2.length === 0) {
-          this.lastCompletedKana = this.pressedKana;
-          this.lastCompletedAt = event.timeStamp;
-          this.completeWord();
-          this.$refs.input.value = "";
+      let handled = false;
+      for (const key of Array.from(input)) {
+        if (this.advancingToNextWord) {
           break;
+        }
+
+        const expectedKana = this.hiragana2[0];
+        const expectedBase = PENDING_KANA_BASES[expectedKana];
+        const intermediateKana = HAN_DAKUTEN_INTERMEDIATE_KANA[expectedKana];
+        const isDakuten = key === "゛" || key === "\u3099";
+        const isHandakuten = key === "゜" || key === "\u309a";
+
+        if (this.pendingKana && (isDakuten || isHandakuten)) {
+          const expectsHandakuten = "ぱぴぷぺぽ".includes(expectedKana);
+          if ((expectsHandakuten && isHandakuten) || (!expectsHandakuten && isDakuten)) {
+            this.acceptMobileKana(expectedKana);
+            handled = true;
+            continue;
+          }
+        }
+
+        if (key === expectedKana) {
+          this.pendingKana = "";
+          this.acceptMobileKana(key);
+          handled = true;
+          continue;
+        }
+
+        if (intermediateKana && key === intermediateKana) {
+          this.pendingKana = expectedBase;
+          handled = true;
+          continue;
+        }
+
+        if (expectedBase && key === expectedBase) {
+          this.pendingKana = expectedBase;
+          handled = true;
+          continue;
+        }
+
+        if (isComposing) {
+          continue;
+        }
+
+        this.pendingKana = "";
+        this.registerMistype();
+        handled = true;
+      }
+
+      return handled;
+    },
+    acceptMobileKana: function(kana) {
+      this.pendingKana = "";
+      this.pressedKana += kana;
+      this.hiragana2 = this.hiragana2.slice(kana.length);
+
+      if (this.hiragana2.length === 0) {
+        this.completeWord();
+        const inputElement = this.$refs.input;
+        if (inputElement) {
+          inputElement.value = "";
         }
       }
     },
-    handleMobileCompositionEnd: function(event) {
-      const committedInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
-      if (!committedInput) {
-        return;
-      }
-
-      // Input events are judged as they arrive, including during composition.
-      // IMEs can report the base kana (for example ほ) at compositionend even
-      // when the input event already produced its voiced form (ぼ).
-      const lastAcceptedBase = PENDING_KANA_BASES[this.lastAcceptedKana];
-      const sameAsRecentAccepted =
-        event.timeStamp - this.lastAcceptedKanaAt < 250 &&
-        (committedInput === this.lastAcceptedKana || committedInput === lastAcceptedBase);
-      if (!this.pressedKana.endsWith(committedInput) && !sameAsRecentAccepted) {
-        this.handleMobileInput({
-          target: event.target,
-          data: committedInput,
-          isComposing: false,
-          timeStamp: event.timeStamp,
-        });
-      } else {
-        event.target.value = "";
-      }
-      this.lastCompositionInput = committedInput;
-      this.lastCompositionInputAt = event.timeStamp;
+    normalizeMobileInput: function(text) {
+      return this.toHiragana(text.normalize("NFKC").normalize("NFC"));
     },
   SendSumCount: function() {
      this.$emit('SendSumCount', this.count);
