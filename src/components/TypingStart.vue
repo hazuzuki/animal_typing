@@ -55,6 +55,7 @@ export default {
       pendingKana: "",
       advancingToNextWord: false,
       mobileWordId: 0,
+      mobileCompositionWordId: null,
       mobileCompositionStartedAt: 0,
       ignoreNextCompositionEnd: false,
       lastMobileInput: null,
@@ -109,6 +110,7 @@ export default {
       }
     },
     handleMobileCompositionStart: function(event) {
+      this.mobileCompositionWordId = this.mobileWordId;
       this.mobileCompositionStartedAt = event.timeStamp;
     },
     handleMobileInput: function(event) {
@@ -120,6 +122,13 @@ export default {
 
       const fromInputValue = !event.data;
       const text = this.normalizeMobileInput(event.data || inputElement.value);
+      if (
+        this.mobileCompositionWordId !== null &&
+        this.mobileCompositionWordId !== this.mobileWordId
+      ) {
+        inputElement.value = "";
+        return;
+      }
       // Choosing an IME conversion candidate replaces the current composition;
       // it is not a new kana key for the typing game.
       if (
@@ -130,9 +139,6 @@ export default {
         inputElement.value = "";
         return;
       }
-      // Judge each event by its own composition state. A separate start flag
-      // can get stuck if iOS omits compositionend, blocking later keystrokes.
-      const isComposing = Boolean(event.isComposing);
       const suppressed = this.suppressNextMobileInput;
       this.suppressNextMobileInput = null;
 
@@ -144,25 +150,29 @@ export default {
         return;
       }
 
-      if (isComposing && !this.isExpectedCompositionCandidate(text, fromInputValue)) {
-        this.lastMobileInput = { text, handled: false, timeStamp: event.timeStamp, wordId: this.mobileWordId };
-        return;
-      }
-
       const handled = text
-        ? this.processMobileKana(text, isComposing, fromInputValue)
+        ? this.processMobileKana(text, fromInputValue)
         : false;
       this.lastMobileInput = { text, handled, timeStamp: event.timeStamp, wordId: this.mobileWordId };
 
-      // Keep the active IME composition intact. Once it commits, compositionend
-      // clears the field so old text cannot leak into the next input.
-      if (!isComposing) {
+      // Do not erase an active iOS composition: doing so can make the keyboard
+      // hold the character until Enter. The composed text is judged above and
+      // cleared once the composition commits.
+      if (!event.isComposing) {
         inputElement.value = "";
       }
     },
     handleMobileCompositionEnd: function(event) {
       const compositionStartedAt = this.mobileCompositionStartedAt;
       const inputElement = event.target;
+      const compositionWordId = this.mobileCompositionWordId;
+      this.mobileCompositionWordId = null;
+      this.mobileCompositionStartedAt = 0;
+      if (compositionWordId !== null && compositionWordId !== this.mobileWordId) {
+        this.suppressNextMobileInput = null;
+        inputElement.value = "";
+        return;
+      }
       if (this.ignoreNextCompositionEnd) {
         this.ignoreNextCompositionEnd = false;
         inputElement.value = "";
@@ -200,7 +210,7 @@ export default {
         text && !alreadyHandled && !compositionReportsAcceptedBase &&
         this.active && !this.advancingToNextWord
       ) {
-        this.processMobileKana(text, false, fromInputValue);
+        this.processMobileKana(text, fromInputValue);
       }
 
       this.suppressNextMobileInput = text
@@ -208,27 +218,7 @@ export default {
         : null;
       inputElement.value = "";
     },
-    isExpectedCompositionCandidate: function(text, fromInputValue) {
-      let candidate = text;
-      if (
-        candidate.startsWith(this.pressedKana) &&
-        (candidate.length > this.pressedKana.length || fromInputValue)
-      ) {
-        candidate = candidate.slice(this.pressedKana.length);
-      }
-
-      if (this.pressedKana.endsWith(candidate)) {
-        return true;
-      }
-
-      const expectedKana = this.hiragana2[0];
-      const expectedBase = PENDING_KANA_BASES[expectedKana];
-      return candidate === expectedKana ||
-        candidate === expectedBase ||
-        candidate === HAN_DAKUTEN_INTERMEDIATE_KANA[expectedKana] ||
-        (this.pendingKana && (candidate === "゛" || candidate === "゜" || candidate === "\u3099" || candidate === "\u309a"));
-    },
-    processMobileKana: function(text, isComposing, fromInputValue) {
+    processMobileKana: function(text, fromInputValue) {
       let input = text;
       if (
         input.startsWith(this.pressedKana) &&
@@ -274,10 +264,6 @@ export default {
         if (expectedBase && key === expectedBase) {
           this.pendingKana = expectedBase;
           handled = true;
-          continue;
-        }
-
-        if (isComposing) {
           continue;
         }
 
