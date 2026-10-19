@@ -57,6 +57,7 @@ export default {
       mobileWordId: 0,
       mobileCompositionWordId: null,
       mobileCompositionStartedAt: 0,
+      mobileCompositionInputHandled: false,
       ignoreNextCompositionEnd: false,
       lastMobileInput: null,
       suppressNextMobileInput: null,
@@ -112,6 +113,7 @@ export default {
     handleMobileCompositionStart: function(event) {
       this.mobileCompositionWordId = this.mobileWordId;
       this.mobileCompositionStartedAt = event.timeStamp;
+      this.mobileCompositionInputHandled = false;
     },
     handleMobileInput: function(event) {
       const inputElement = event.target;
@@ -153,6 +155,9 @@ export default {
       const handled = text
         ? this.processMobileKana(text, fromInputValue)
         : false;
+      if (text && this.mobileCompositionWordId === this.mobileWordId && handled) {
+        this.mobileCompositionInputHandled = true;
+      }
       this.lastMobileInput = { text, handled, timeStamp: event.timeStamp, wordId: this.mobileWordId };
 
       // Do not erase an active iOS composition: doing so can make the keyboard
@@ -164,10 +169,12 @@ export default {
     },
     handleMobileCompositionEnd: function(event) {
       const compositionStartedAt = this.mobileCompositionStartedAt;
+      const compositionInputHandled = this.mobileCompositionInputHandled;
       const inputElement = event.target;
       const compositionWordId = this.mobileCompositionWordId;
       this.mobileCompositionWordId = null;
       this.mobileCompositionStartedAt = 0;
+      this.mobileCompositionInputHandled = false;
       if (compositionWordId !== null && compositionWordId !== this.mobileWordId) {
         this.suppressNextMobileInput = null;
         inputElement.value = "";
@@ -185,6 +192,12 @@ export default {
       const fromInputValue = !event.data;
       const text = this.normalizeMobileInput(event.data || inputElement.value);
       const previous = this.lastMobileInput;
+      // A delayed compositionend from the previous key must not be judged
+      // against the position reached by a newer key event.
+      if (previous && previous.wordId === this.mobileWordId && previous.timeStamp > event.timeStamp) {
+        inputElement.value = "";
+        return;
+      }
       // A composition may finish after the final kana has already completed
       // the word and the next word has been loaded. Never replay that commit.
       if (previous && previous.wordId !== this.mobileWordId) {
@@ -199,6 +212,7 @@ export default {
       const alreadyHandled = inputBelongsToComposition && previous.handled && (
         previous.text === text || this.pressedKana.endsWith(text)
       );
+      const alreadyJudgedDuringComposition = compositionInputHandled && !this.pendingKana;
       const lastAcceptedKana = this.pressedKana.slice(-1);
       const acceptedKanaBase = PENDING_KANA_BASES[lastAcceptedKana];
       // iOS may report the unvoiced base (for example し) at compositionend
@@ -207,7 +221,7 @@ export default {
         acceptedKanaBase && text.endsWith(acceptedKanaBase);
 
       if (
-        text && !alreadyHandled && !compositionReportsAcceptedBase &&
+        text && !alreadyHandled && !alreadyJudgedDuringComposition && !compositionReportsAcceptedBase &&
         this.active && !this.advancingToNextWord
       ) {
         this.processMobileKana(text, fromInputValue);
@@ -314,6 +328,7 @@ export default {
           handler() {
               this.mobileWordId += 1;
               this.mobileCompositionStartedAt = 0;
+              this.mobileCompositionInputHandled = false;
               this.ignoreNextCompositionEnd = false;
               this.lastMobileInput = null;
               this.suppressNextMobileInput = null;
