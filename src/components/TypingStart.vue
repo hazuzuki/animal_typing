@@ -1,7 +1,7 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント: {{ count }}</p>
-    <p class="game-status">残り時間: {{PassSec}}</p>
+    <p class="game-status">ただいまのカウント {{ count }}</p>
+    <p class="game-status">残り時間 {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
     <p v-else class="type-word">
@@ -12,7 +12,8 @@
     </p>
     <input
       ref="input"
-      :key="mobileWordId"
+      :key="mobileWordId + ':' + mobileInputKey"
+      :data-input-key="mobileInputKey"
       v-if="$mq === 'sp'"
       @input="handleMobileInput"
       @compositionstart="handleMobileCompositionStart"
@@ -56,9 +57,11 @@ export default {
       pendingKana: "",
       advancingToNextWord: false,
       mobileWordId: 0,
+      mobileInputKey: 0,
       mobileCompositionWordId: null,
       mobileCompositionStartedAt: 0,
       mobileCompositionInputHandled: false,
+      ignoreMobileInputUntilCompositionStart: false,
       ignoreNextCompositionEnd: false,
       lastMobileInput: null,
       suppressNextMobileInput: null,
@@ -89,6 +92,8 @@ export default {
     },
     completeWord: function() {
       this.advancingToNextWord = true;
+      this.ignoreMobileInputUntilCompositionStart =
+        this.mobileCompositionWordId === this.mobileWordId;
       // Invalidate the old composition before blurring it, so a commit caused
       // by blur cannot be treated as input for the next word.
       this.mobileWordId += 1;
@@ -120,6 +125,10 @@ export default {
       }
     },
     handleMobileCompositionStart: function(event) {
+      if (event.target !== this.$refs.input) {
+        return;
+      }
+      this.ignoreMobileInputUntilCompositionStart = false;
       this.mobileCompositionWordId = this.mobileWordId;
       this.mobileCompositionStartedAt = event.timeStamp;
       this.mobileCompositionInputHandled = false;
@@ -127,6 +136,10 @@ export default {
     handleMobileInput: function(event) {
       const inputElement = event.target;
       if (!this.active || this.advancingToNextWord || inputElement !== this.$refs.input) {
+        inputElement.value = "";
+        return;
+      }
+      if (this.ignoreMobileInputUntilCompositionStart) {
         inputElement.value = "";
         return;
       }
@@ -182,6 +195,10 @@ export default {
     },
     handleMobileCompositionEnd: function(event) {
       const inputElement = event.target;
+      if (Number(inputElement.getAttribute("data-input-key")) !== this.mobileInputKey) {
+        inputElement.value = "";
+        return;
+      }
       const compositionStartedAt = this.mobileCompositionStartedAt;
       const compositionInputHandled = this.mobileCompositionInputHandled;
       const compositionWordId = this.mobileCompositionWordId;
@@ -297,9 +314,26 @@ export default {
         this.pendingKana = "";
         this.registerMistype();
         handled = true;
+        this.resetMobileInputAfterMistype();
+        break;
       }
 
       return handled;
+    },
+    resetMobileInputAfterMistype: function() {
+      const previousInput = this.$refs.input;
+      this.mobileInputKey += 1;
+      if (previousInput) {
+        previousInput.blur();
+        previousInput.value = "";
+      }
+      this.$nextTick(() => {
+        const currentInput = this.$refs.input;
+        if (currentInput && this.active && !this.advancingToNextWord) {
+          currentInput.value = "";
+          currentInput.focus();
+        }
+      });
     },
     acceptMobileKana: function(kana) {
       this.pendingKana = "";
