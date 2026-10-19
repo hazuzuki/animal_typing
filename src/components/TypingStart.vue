@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント: {{ count }}</p>
+    <p class="game-status">ただいまのカウント {{ count }}</p>
     <p class="game-status">残り時間 {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
@@ -63,6 +63,7 @@ export default {
       mobileCompositionStartedAt: 0,
       mobileCompositionInputHandled: false,
       ignoreMobileInputUntilCompositionStart: false,
+      stalePreviousWordTexts: [],
       ignoreNextCompositionEnd: false,
       lastMobileInput: null,
       suppressNextMobileInput: null,
@@ -94,10 +95,16 @@ export default {
     completeWord: function() {
       this.advancingToNextWord = true;
       this.ignoreMobileInputUntilCompositionStart = true;
+      const inputElement = this.$refs.input;
+      this.stalePreviousWordTexts = [
+        inputElement && inputElement.value
+          ? this.normalizeMobileInput(inputElement.value)
+          : "",
+        this.pressedKana,
+      ].filter(Boolean).sort((a, b) => b.length - a.length);
       // Invalidate the old composition before blurring it, so a commit caused
       // by blur cannot be treated as input for the next word.
       this.mobileWordId += 1;
-      const inputElement = this.$refs.input;
       if (inputElement) {
         inputElement.blur();
         inputElement.value = "";
@@ -145,7 +152,13 @@ export default {
       }
 
       const fromInputValue = !event.data;
-      const text = this.normalizeMobileInput(event.data || inputElement.value);
+      const text = this.removeStalePreviousWordPrefix(
+        this.normalizeMobileInput(event.data || inputElement.value)
+      );
+      if (!text) {
+        inputElement.value = "";
+        return;
+      }
       if (
         this.mobileCompositionWordId !== null &&
         this.mobileCompositionWordId !== this.mobileWordId
@@ -224,7 +237,13 @@ export default {
         return;
       }
       const fromInputValue = !event.data;
-      const text = this.normalizeMobileInput(event.data || inputElement.value);
+      const text = this.removeStalePreviousWordPrefix(
+        this.normalizeMobileInput(event.data || inputElement.value)
+      );
+      if (!text) {
+        inputElement.value = "";
+        return;
+      }
       const previous = this.lastMobileInput;
       // A delayed compositionend from the previous key must not be judged
       // against the position reached by a newer key event.
@@ -243,15 +262,24 @@ export default {
       }
       const inputBelongsToComposition = previous && compositionStartedAt > 0 &&
         previous.timeStamp >= compositionStartedAt;
-      const alreadyHandled = inputBelongsToComposition && previous.handled && (
-        previous.text === text || this.pressedKana.endsWith(text)
+      const isRecentDuplicateInput = previous &&
+        previous.wordId === this.mobileWordId &&
+        previous.handled &&
+        event.timeStamp >= previous.timeStamp &&
+        event.timeStamp - previous.timeStamp < 100;
+      const alreadyHandled = previous && previous.handled && (
+        (inputBelongsToComposition && (
+          previous.text === text || this.pressedKana.endsWith(text)
+        )) ||
+        (isRecentDuplicateInput && previous.text === text)
       );
       const alreadyJudgedDuringComposition = compositionInputHandled && !this.pendingKana;
       const lastAcceptedKana = this.pressedKana.slice(-1);
       const acceptedKanaBase = PENDING_KANA_BASES[lastAcceptedKana];
       // iOS may report the unvoiced base (for example し) at compositionend
       // after the input event already accepted its voiced form (じ).
-      const compositionReportsAcceptedBase = inputBelongsToComposition && previous.handled &&
+      const compositionReportsAcceptedBase =
+        (inputBelongsToComposition || isRecentDuplicateInput) && previous && previous.handled &&
         acceptedKanaBase && text.endsWith(acceptedKanaBase);
 
       if (
@@ -351,6 +379,12 @@ export default {
     normalizeMobileInput: function(text) {
       return this.toHiragana(text.normalize("NFKC").normalize("NFC"));
     },
+    removeStalePreviousWordPrefix: function(text) {
+      const staleText = this.stalePreviousWordTexts.find((previousText) =>
+        text.startsWith(previousText)
+      );
+      return staleText ? text.slice(staleText.length) : text;
+    },
     isKanaInput: function(text) {
       return Array.from(text).every((character) => {
         const code = character.charCodeAt(0);
@@ -381,7 +415,9 @@ export default {
               this.mobileCompositionStartedAt = 0;
               this.mobileCompositionInputHandled = false;
               this.ignoreNextCompositionEnd = false;
-              this.lastMobileInput = null;
+              // Keep the previous input's wordId until the next input arrives.
+              // A delayed compositionend can fire after the prop watcher runs;
+              // its old wordId lets handleMobileCompositionEnd discard it.
               this.roman2 = this.roman;
               this.hiragana2 = this.toHiragana(this.kata);
               this.pressedKana = "";
