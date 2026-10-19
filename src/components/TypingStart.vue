@@ -169,10 +169,9 @@ export default {
       }
       this.lastMobileInput = { text, handled, timeStamp: event.timeStamp, wordId: this.mobileWordId };
 
-      // Do not erase an active iOS composition: doing so can make the keyboard
-      // hold the character until Enter. The composed text is judged above and
-      // cleared once the composition commits.
-      if (!event.isComposing) {
+      // Clear each delivered kana immediately, including composition updates,
+      // so the next kana cannot inherit the previous conversion buffer.
+      if (!event.isComposing || event.data) {
         inputElement.value = "";
       }
     },
