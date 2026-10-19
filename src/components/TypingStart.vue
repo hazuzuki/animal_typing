@@ -89,13 +89,12 @@ export default {
     },
     completeWord: function() {
       this.advancingToNextWord = true;
-      // Changing the key replaces the input immediately and discards the
-      // native keyboard's active composition before the next word is loaded.
+      // Invalidate the old composition before blurring it, so a commit caused
+      // by blur cannot be treated as input for the next word.
       this.mobileWordId += 1;
-      // Clear the text synchronously when the answer is completed, before
-      // asking the parent to load the next question.
       const inputElement = this.$refs.input;
       if (inputElement) {
+        inputElement.blur();
         inputElement.value = "";
       }
       this.pressed = "";
