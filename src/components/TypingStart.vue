@@ -73,6 +73,7 @@ export default {
       }
 
       if(this.roman2.split('')[0] === key) {
+        this.stopMistypeSound();
         this.roman2 = this.roman2.slice(1);
         this.pressed += key;
         if(this.roman2.length == 0) {
@@ -84,9 +85,14 @@ export default {
       return true
     },
     registerMistype: function() {
+      this.buzzeraudio.currentTime = 0;
       this.buzzeraudio.play();
       this.misscount += 1;
       this.$emit('MissCount', this.misscount);
+    },
+    stopMistypeSound: function() {
+      this.buzzeraudio.pause();
+      this.buzzeraudio.currentTime = 0;
     },
     completeWord: function() {
       this.advancingToNextWord = true;
@@ -196,6 +202,7 @@ export default {
           (input.endsWith(intermediateKana) || rawInput.endsWith(intermediateKana))
         ) {
           this.pendingKana = expectedBase;
+          event.target.value = "";
           return;
         } else if (
           input === expectedBase ||
@@ -203,10 +210,12 @@ export default {
           rawInput.endsWith(expectedBase)
         ) {
           this.pendingKana = expectedBase;
+          event.target.value = "";
           return;
         } else if (event.isComposing || event.target.composing) {
           return;
         } else if (this.pendingKana === expectedBase && !input) {
+          event.target.value = "";
           return;
         } else if (this.pendingKana) {
           this.registerMistype();
@@ -234,10 +243,12 @@ export default {
 
       if (firstKey && intermediateKana === firstKey) {
         this.pendingKana = expectedBase;
+        event.target.value = "";
         return;
       }
       if (firstKey && PENDING_KANA_BASES[this.hiragana2[0]] === firstKey) {
         this.pendingKana = firstKey;
+        event.target.value = "";
         return;
       }
 
@@ -250,6 +261,7 @@ export default {
           return;
         }
 
+        this.stopMistypeSound();
         this.pressedKana += key;
         this.hiragana2 = this.hiragana2.slice(1);
         this.lastAcceptedKana = key;
@@ -284,6 +296,8 @@ export default {
           isComposing: false,
           timeStamp: event.timeStamp,
         });
+      } else {
+        event.target.value = "";
       }
       this.lastCompositionInput = committedInput;
       this.lastCompositionInputAt = event.timeStamp;
