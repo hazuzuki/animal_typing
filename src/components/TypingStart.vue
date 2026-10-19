@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント {{ count }}</p>
+    <p class="game-status">ただいまのカウント: {{ count }}</p>
     <p class="game-status">残り時間 {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
@@ -193,12 +193,16 @@ export default {
       if (text && this.mobileCompositionWordId === this.mobileWordId && handled) {
         this.mobileCompositionInputHandled = true;
       }
-      this.lastMobileInput = {
-        text,
-        handled,
-        timeStamp: event.timeStamp,
-        wordId: this.mobileWordId,
-      };
+      // A mistype replaces the input element. Do not let its final event
+      // become the duplicate-detection record for the replacement element.
+      if (Number(inputElement.getAttribute("data-input-key")) === this.mobileInputKey) {
+        this.lastMobileInput = {
+          text,
+          handled,
+          timeStamp: event.timeStamp,
+          wordId: this.mobileWordId,
+        };
+      }
 
       // Clear each delivered kana immediately, including composition updates,
       // so the next kana cannot inherit the previous conversion buffer.
@@ -354,6 +358,12 @@ export default {
     },
     resetMobileInputAfterMistype: function() {
       const previousInput = this.$refs.input;
+      this.mobileCompositionWordId = null;
+      this.mobileCompositionStartedAt = 0;
+      this.mobileCompositionInputHandled = false;
+      this.lastMobileInput = null;
+      this.suppressNextMobileInput = null;
+      this.ignoreNextCompositionEnd = false;
       this.mobileInputKey += 1;
       if (previousInput) {
         previousInput.blur();
