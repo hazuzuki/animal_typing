@@ -12,6 +12,7 @@
     </p>
     <input
       ref="input"
+      :key="mobileWordId"
       v-if="$mq === 'sp'"
       @input="handleMobileInput"
       @compositionstart="handleMobileCompositionStart"
@@ -88,6 +89,9 @@ export default {
     },
     completeWord: function() {
       this.advancingToNextWord = true;
+      // Changing the key replaces the input immediately and discards the
+      // native keyboard's active composition before the next word is loaded.
+      this.mobileWordId += 1;
       // Clear the text synchronously when the answer is completed, before
       // asking the parent to load the next question.
       const inputElement = this.$refs.input;
@@ -182,10 +186,7 @@ export default {
       this.mobileCompositionStartedAt = 0;
       this.mobileCompositionInputHandled = false;
       if (compositionWordId !== null && compositionWordId !== this.mobileWordId) {
-        const staleText = this.normalizeMobileInput(event.data || inputElement.value);
-        this.suppressNextMobileInput = staleText
-          ? { text: staleText, timeStamp: event.timeStamp }
-          : null;
+        this.suppressNextMobileInput = null;
         inputElement.value = "";
         return;
       }
@@ -331,7 +332,11 @@ export default {
       roman: {
           immediate: true,
           handler() {
-              this.mobileWordId += 1;
+              // completeWord already changed the input generation; for other
+              // word changes, advance it here.
+              if (!this.advancingToNextWord) {
+                this.mobileWordId += 1;
+              }
               this.mobileCompositionStartedAt = 0;
               this.mobileCompositionInputHandled = false;
               this.ignoreNextCompositionEnd = false;
