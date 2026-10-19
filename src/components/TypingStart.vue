@@ -131,13 +131,8 @@ export default {
         return;
       }
 
-      // For voiced kana, intermediate IME input must reach the handling below
-      // so the base kana and dakuten can be combined before judging.
       const expectedKana = this.hiragana2[0];
       const expectedBase = PENDING_KANA_BASES[expectedKana];
-      if ((event.isComposing || event.target.composing) && !expectedBase) {
-        return;
-      }
 
       const rawInput = this.toHiragana(event.target.value.normalize("NFKC").normalize("NFC"));
       const eventInput = this.toHiragana((event.data || "").normalize("NFKC").normalize("NFC"));
@@ -273,12 +268,16 @@ export default {
         return;
       }
 
-      this.handleMobileInput({
-        target: event.target,
-        data: committedInput,
-        isComposing: false,
-        timeStamp: event.timeStamp,
-      });
+      // Input events are judged as they arrive, including during composition.
+      // Do not judge the same text again when the IME later commits it.
+      if (!this.pressedKana.endsWith(committedInput)) {
+        this.handleMobileInput({
+          target: event.target,
+          data: committedInput,
+          isComposing: false,
+          timeStamp: event.timeStamp,
+        });
+      }
       this.lastCompositionInput = committedInput;
       this.lastCompositionInputAt = event.timeStamp;
     },
