@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント {{ count }}</p>
+    <p class="game-status">ただいまのカウント: {{ count }}</p>
     <p class="game-status">残り時間 {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
@@ -31,6 +31,7 @@ const PENDING_KANA_BASES = {
   だ: "た", ぢ: "ち", づ: "つ", で: "て", ど: "と",
   ば: "は", び: "ひ", ぶ: "ふ", べ: "へ", ぼ: "ほ",
   ぱ: "は", ぴ: "ひ", ぷ: "ふ", ぺ: "へ", ぽ: "ほ",
+  っ: "つ",
   ゔ: "う",
 };
 
@@ -92,8 +93,7 @@ export default {
     },
     completeWord: function() {
       this.advancingToNextWord = true;
-      this.ignoreMobileInputUntilCompositionStart =
-        this.mobileCompositionWordId === this.mobileWordId;
+      this.ignoreMobileInputUntilCompositionStart = true;
       // Invalidate the old composition before blurring it, so a commit caused
       // by blur cannot be treated as input for the next word.
       this.mobileWordId += 1;
@@ -156,7 +156,7 @@ export default {
       // Choosing an IME conversion candidate replaces the current composition;
       // it is not a new kana key for the typing game.
       if (
-        event.inputType === "insertReplacementText" ||
+        (event.inputType === "insertReplacementText" && text !== this.hiragana2[0]) ||
         (text && !this.isKanaInput(text))
       ) {
         this.ignoreNextCompositionEnd = true;
@@ -196,6 +196,10 @@ export default {
     handleMobileCompositionEnd: function(event) {
       const inputElement = event.target;
       if (Number(inputElement.getAttribute("data-input-key")) !== this.mobileInputKey) {
+        inputElement.value = "";
+        return;
+      }
+      if (this.ignoreMobileInputUntilCompositionStart) {
         inputElement.value = "";
         return;
       }
