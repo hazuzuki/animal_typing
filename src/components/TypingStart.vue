@@ -55,7 +55,8 @@ export default {
       pendingKana: "",
       advancingToNextWord: false,
       mobileWordId: 0,
-      mobileComposing: false,
+      mobileCompositionStartedAt: 0,
+      ignoreNextCompositionEnd: false,
       lastMobileInput: null,
       suppressNextMobileInput: null,
       }
@@ -107,8 +108,8 @@ export default {
         this.$refs.input.focus();
       }
     },
-    handleMobileCompositionStart: function() {
-      this.mobileComposing = true;
+    handleMobileCompositionStart: function(event) {
+      this.mobileCompositionStartedAt = event.timeStamp;
     },
     handleMobileInput: function(event) {
       const inputElement = event.target;
@@ -119,10 +120,19 @@ export default {
 
       const fromInputValue = !event.data;
       const text = this.normalizeMobileInput(event.data || inputElement.value);
-      // inputType can remain insertCompositionText for a committed iOS input.
-      // Use the composition lifecycle (and isComposing) to avoid swallowing a
-      // real typo that never receives another composition event.
-      const isComposing = event.isComposing || this.mobileComposing;
+      // Choosing an IME conversion candidate replaces the current composition;
+      // it is not a new kana key for the typing game.
+      if (
+        event.inputType === "insertReplacementText" ||
+        (text && !this.isKanaInput(text))
+      ) {
+        this.ignoreNextCompositionEnd = true;
+        inputElement.value = "";
+        return;
+      }
+      // Judge each event by its own composition state. A separate start flag
+      // can get stuck if iOS omits compositionend, blocking later keystrokes.
+      const isComposing = Boolean(event.isComposing);
       const suppressed = this.suppressNextMobileInput;
       this.suppressNextMobileInput = null;
 
@@ -151,8 +161,13 @@ export default {
       }
     },
     handleMobileCompositionEnd: function(event) {
-      this.mobileComposing = false;
+      const compositionStartedAt = this.mobileCompositionStartedAt;
       const inputElement = event.target;
+      if (this.ignoreNextCompositionEnd) {
+        this.ignoreNextCompositionEnd = false;
+        inputElement.value = "";
+        return;
+      }
       if (inputElement !== this.$refs.input) {
         inputElement.value = "";
         return;
@@ -169,11 +184,22 @@ export default {
         inputElement.value = "";
         return;
       }
-      const alreadyHandled = previous && previous.handled && (
+      const inputBelongsToComposition = previous && compositionStartedAt > 0 &&
+        previous.timeStamp >= compositionStartedAt;
+      const alreadyHandled = inputBelongsToComposition && previous.handled && (
         previous.text === text || this.pressedKana.endsWith(text)
       );
+      const lastAcceptedKana = this.pressedKana.slice(-1);
+      const acceptedKanaBase = PENDING_KANA_BASES[lastAcceptedKana];
+      // iOS may report the unvoiced base (for example し) at compositionend
+      // after the input event already accepted its voiced form (じ).
+      const compositionReportsAcceptedBase = inputBelongsToComposition && previous.handled &&
+        acceptedKanaBase && text.endsWith(acceptedKanaBase);
 
-      if (text && !alreadyHandled && this.active && !this.advancingToNextWord) {
+      if (
+        text && !alreadyHandled && !compositionReportsAcceptedBase &&
+        this.active && !this.advancingToNextWord
+      ) {
         this.processMobileKana(text, false, fromInputValue);
       }
 
@@ -278,6 +304,13 @@ export default {
     normalizeMobileInput: function(text) {
       return this.toHiragana(text.normalize("NFKC").normalize("NFC"));
     },
+    isKanaInput: function(text) {
+      return Array.from(text).every((character) => {
+        const code = character.charCodeAt(0);
+        return (code >= 0x3041 && code <= 0x3096) ||
+          code === 0x3099 || code === 0x309a || code === 0x30fc;
+      });
+    },
   SendSumCount: function() {
      this.$emit('SendSumCount', this.count);
      this.$emit('TypedAnimal', this.typed_animal);
@@ -294,7 +327,8 @@ export default {
           immediate: true,
           handler() {
               this.mobileWordId += 1;
-              this.mobileComposing = false;
+              this.mobileCompositionStartedAt = 0;
+              this.ignoreNextCompositionEnd = false;
               this.lastMobileInput = null;
               this.suppressNextMobileInput = null;
               this.roman2 = this.roman;
