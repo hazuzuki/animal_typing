@@ -88,6 +88,12 @@ export default {
     },
     completeWord: function() {
       this.advancingToNextWord = true;
+      // Clear the text synchronously when the answer is completed, before
+      // asking the parent to load the next question.
+      const inputElement = this.$refs.input;
+      if (inputElement) {
+        inputElement.value = "";
+      }
       this.pressed = "";
       this.pressedKana = "";
       this.pendingKana = "";
@@ -176,7 +182,10 @@ export default {
       this.mobileCompositionStartedAt = 0;
       this.mobileCompositionInputHandled = false;
       if (compositionWordId !== null && compositionWordId !== this.mobileWordId) {
-        this.suppressNextMobileInput = null;
+        const staleText = this.normalizeMobileInput(event.data || inputElement.value);
+        this.suppressNextMobileInput = staleText
+          ? { text: staleText, timeStamp: event.timeStamp }
+          : null;
         inputElement.value = "";
         return;
       }
@@ -295,10 +304,6 @@ export default {
 
       if (this.hiragana2.length === 0) {
         this.completeWord();
-        const inputElement = this.$refs.input;
-        if (inputElement) {
-          inputElement.value = "";
-        }
       }
     },
     normalizeMobileInput: function(text) {
@@ -331,7 +336,6 @@ export default {
               this.mobileCompositionInputHandled = false;
               this.ignoreNextCompositionEnd = false;
               this.lastMobileInput = null;
-              this.suppressNextMobileInput = null;
               this.roman2 = this.roman;
               this.hiragana2 = this.toHiragana(this.kata);
               this.pressedKana = "";
