@@ -1,7 +1,7 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント {{ count }}</p>
-    <p class="game-status">残り時間 {{PassSec}}</p>
+    <p class="game-status">ただいまのカウント: {{ count }}</p>
+    <p class="game-status">残り時間: {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
     <p v-else class="type-word">
@@ -12,8 +12,7 @@
     </p>
     <input
       ref="input"
-      :key="mobileInputKey"
-      :data-input-key="mobileInputKey"
+      :key="mobileWordId"
       v-if="$mq === 'sp'"
       @input="handleMobileInput"
       @compositionstart="handleMobileCompositionStart"
@@ -57,9 +56,7 @@ export default {
       pendingKana: "",
       advancingToNextWord: false,
       mobileWordId: 0,
-      mobileInputKey: 0,
       mobileCompositionWordId: null,
-      mobileCompositionInputKey: null,
       mobileCompositionStartedAt: 0,
       mobileCompositionInputHandled: false,
       ignoreNextCompositionEnd: false,
@@ -95,7 +92,6 @@ export default {
       // Invalidate the old composition before blurring it, so a commit caused
       // by blur cannot be treated as input for the next word.
       this.mobileWordId += 1;
-      this.mobileInputKey += 1;
       const inputElement = this.$refs.input;
       if (inputElement) {
         inputElement.blur();
@@ -125,13 +121,11 @@ export default {
     },
     handleMobileCompositionStart: function(event) {
       this.mobileCompositionWordId = this.mobileWordId;
-      this.mobileCompositionInputKey = this.mobileInputKey;
       this.mobileCompositionStartedAt = event.timeStamp;
       this.mobileCompositionInputHandled = false;
     },
     handleMobileInput: function(event) {
       const inputElement = event.target;
-      const inputKey = this.mobileInputKey;
       if (!this.active || this.advancingToNextWord || inputElement !== this.$refs.input) {
         inputElement.value = "";
         return;
@@ -178,7 +172,6 @@ export default {
         handled,
         timeStamp: event.timeStamp,
         wordId: this.mobileWordId,
-        inputKey,
       };
 
       // Clear each delivered kana immediately, including composition updates,
@@ -189,25 +182,12 @@ export default {
     },
     handleMobileCompositionEnd: function(event) {
       const inputElement = event.target;
-      const inputKey = Number(inputElement.getAttribute("data-input-key"));
-      // A blur caused by replacing an accepted character's input node can
-      // synchronously emit compositionend. Do not rejudge that old node.
-      if (inputKey !== this.mobileInputKey) {
-        inputElement.value = "";
-        return;
-      }
       const compositionStartedAt = this.mobileCompositionStartedAt;
       const compositionInputHandled = this.mobileCompositionInputHandled;
       const compositionWordId = this.mobileCompositionWordId;
-      const compositionInputKey = this.mobileCompositionInputKey;
       this.mobileCompositionWordId = null;
-      this.mobileCompositionInputKey = null;
       this.mobileCompositionStartedAt = 0;
       this.mobileCompositionInputHandled = false;
-      if (compositionInputKey !== null && compositionInputKey !== this.mobileInputKey) {
-        inputElement.value = "";
-        return;
-      }
       if (compositionWordId !== null && compositionWordId !== this.mobileWordId) {
         this.suppressNextMobileInput = null;
         inputElement.value = "";
@@ -225,12 +205,6 @@ export default {
       const fromInputValue = !event.data;
       const text = this.normalizeMobileInput(event.data || inputElement.value);
       const previous = this.lastMobileInput;
-      // Correct kana replace the input node. Ignore a compositionend associated
-      // with a previous node instead of judging it at the next kana position.
-      if (previous && previous.inputKey !== this.mobileInputKey) {
-        inputElement.value = "";
-        return;
-      }
       // A delayed compositionend from the previous key must not be judged
       // against the position reached by a newer key event.
       if (previous && previous.wordId === this.mobileWordId && previous.timeStamp > event.timeStamp) {
@@ -334,22 +308,6 @@ export default {
 
       if (this.hiragana2.length === 0) {
         this.completeWord();
-      } else {
-        // A fresh input node clears iOS's current conversion buffer after each
-        // accepted kana. Blur first so the OS ends the old composition session.
-        const previousInput = this.$refs.input;
-        this.mobileInputKey += 1;
-        if (previousInput) {
-          previousInput.blur();
-          previousInput.value = "";
-        }
-        this.$nextTick(() => {
-          const currentInput = this.$refs.input;
-          if (currentInput && this.active && !this.advancingToNextWord) {
-            currentInput.value = "";
-            currentInput.focus();
-          }
-        });
       }
     },
     normalizeMobileInput: function(text) {
@@ -381,7 +339,6 @@ export default {
               // word changes, advance it here.
               if (!this.advancingToNextWord) {
                 this.mobileWordId += 1;
-                this.mobileInputKey += 1;
               }
               this.mobileCompositionStartedAt = 0;
               this.mobileCompositionInputHandled = false;
