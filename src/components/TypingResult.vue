@@ -30,10 +30,9 @@ export default {
     props: ["sumcount", "Typed_animal", "misscount", "typing"],
     computed: {
         lineShareUrl() {
-            const shareUrl = new URL("https://social-plugins.line.me/lineit/share");
+            const shareUrl = new URL("https://line.me/R/share");
             shareUrl.search = new URLSearchParams({
-                url: "https://hazuzuki.github.io/animal_typing/",
-                text: `${this.sumcount}匹の動物を見つけたよ。遊んでみてね。 #動物タイピングゲーム`,
+                text: `${this.sumcount}匹の動物を見つけたよ。みんなも遊んでみてね。\n#動物タイピングゲーム\nhttps://hazuzuki.github.io/animal_typing/`,
             }).toString();
             return shareUrl.toString();
         },
