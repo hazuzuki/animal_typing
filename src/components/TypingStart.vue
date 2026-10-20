@@ -1,5 +1,5 @@
 <template>
-  <div class="content">
+  <div class="content" @touchstart.capture="keepMobileKeyboardOpen">
     <p class="game-status">ただいまのカウント: {{ count }}</p>
     <p class="game-status">残り時間: {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
@@ -130,6 +130,11 @@ export default {
     },
     focusInput: function() {
       if (this.$refs.input && this.active) {
+        this.$refs.input.focus();
+      }
+    },
+    keepMobileKeyboardOpen: function() {
+      if (this.$mq === "sp" && this.active && this.$refs.input) {
         this.$refs.input.focus();
       }
     },
