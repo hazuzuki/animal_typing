@@ -175,16 +175,6 @@
     position: relative;
 }
 
-.change_log > .content::before {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -15px;
-    border: 15px solid transparent;
-    border-top: 15px solid white;
-}
-
 .change_log > .content > dl {
     text-align: left;
     line-height: 1.5em;
