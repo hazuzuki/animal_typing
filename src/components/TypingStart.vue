@@ -1,7 +1,7 @@
 <template>
   <div class="content">
     <p class="game-status">ただいまのカウント: {{ count }}</p>
-    <p class="game-status">残り時間 {{PassSec}}</p>
+    <p class="game-status">残り時間: {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
     <p v-else class="type-word">
