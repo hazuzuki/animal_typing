@@ -9,7 +9,7 @@
             <p class="find_animal">見つけた動物を報告する</p>
             <div class="icon-list">
                 <img class="share-icon share-icon-x" @click="shareOnX" src="@/assets/x_icon.svg" alt="Xでシェア">
-                <a href="https://social-plugins.line.me/lineit/share?url=https://hazuzuki.github.io/animal_typing/" target="_blank" rel="nofollow"><img class="share-icon" src="@/assets/line_icon.png" alt="LINEでシェア"></a>
+                <a :href="lineShareUrl" target="_blank" rel="nofollow noopener noreferrer"><img class="share-icon" src="@/assets/line_icon.png" alt="LINEでシェア"></a>
             </div>
         </div>
         <p class="find_animal">見つけた動物</p>
@@ -28,6 +28,16 @@
 <script>
 export default {
     props: ["sumcount", "Typed_animal", "misscount", "typing"],
+    computed: {
+        lineShareUrl() {
+            const shareUrl = new URL("https://social-plugins.line.me/lineit/share");
+            shareUrl.search = new URLSearchParams({
+                url: "https://hazuzuki.github.io/animal_typing/",
+                text: `${this.sumcount}匹の動物を見つけたよ。遊んでみてね。 #動物タイピングゲーム`,
+            }).toString();
+            return shareUrl.toString();
+        },
+    },
     methods: {
         reload() {
             this.$router.go(this.$router.currentRoute)
