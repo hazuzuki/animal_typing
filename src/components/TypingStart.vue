@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント {{ count }}</p>
+    <p class="game-status">ただいまのカウント: {{ count }}</p>
     <p class="game-status">残り時間 {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
@@ -32,6 +32,8 @@ const PENDING_KANA_BASES = {
   ば: "は", び: "ひ", ぶ: "ふ", べ: "へ", ぼ: "ほ",
   ぱ: "は", ぴ: "ひ", ぷ: "ふ", ぺ: "へ", ぽ: "ほ",
   っ: "つ",
+  ぁ: "あ", ぃ: "い", ぅ: "う", ぇ: "え", ぉ: "お",
+  ゃ: "や", ゅ: "ゆ", ょ: "よ", ゎ: "わ",
   ゔ: "う",
 };
 
@@ -151,7 +153,6 @@ export default {
         return;
       }
 
-      const fromInputValue = !event.data;
       const text = this.removeStalePreviousWordPrefix(
         this.normalizeMobileInput(event.data || inputElement.value)
       );
@@ -188,7 +189,7 @@ export default {
       }
 
       const handled = text
-        ? this.processMobileKana(text, fromInputValue)
+        ? this.processMobileKana(text)
         : false;
       if (text && this.mobileCompositionWordId === this.mobileWordId && handled) {
         this.mobileCompositionInputHandled = true;
@@ -247,7 +248,6 @@ export default {
         inputElement.value = "";
         return;
       }
-      const fromInputValue = !event.data;
       const text = this.removeStalePreviousWordPrefix(
         this.normalizeMobileInput(event.data || inputElement.value)
       );
@@ -297,7 +297,7 @@ export default {
         text && !alreadyHandled && !alreadyJudgedDuringComposition && !compositionReportsAcceptedBase &&
         this.active && !this.advancingToNextWord
       ) {
-        this.processMobileKana(text, fromInputValue);
+        this.processMobileKana(text);
       }
 
       this.suppressNextMobileInput = text
@@ -305,14 +305,8 @@ export default {
         : null;
       inputElement.value = "";
     },
-    processMobileKana: function(text, fromInputValue) {
-      let input = text;
-      if (
-        input.startsWith(this.pressedKana) &&
-        (input.length > this.pressedKana.length || fromInputValue)
-      ) {
-        input = input.slice(this.pressedKana.length);
-      }
+    processMobileKana: function(text) {
+      const input = this.removeAcceptedKanaOverlap(text);
 
       let handled = false;
       for (const key of Array.from(input)) {
@@ -395,6 +389,21 @@ export default {
     },
     normalizeMobileInput: function(text) {
       return this.toHiragana(text.normalize("NFKC").normalize("NFC"));
+    },
+    removeAcceptedKanaOverlap: function(text) {
+      const accepted = Array.from(this.pressedKana);
+      const incoming = Array.from(text);
+      const maxOverlap = Math.min(accepted.length, incoming.length);
+
+      for (let overlap = maxOverlap; overlap > 0; overlap -= 1) {
+        const acceptedSuffix = accepted.slice(-overlap).join("");
+        const incomingPrefix = incoming.slice(0, overlap).join("");
+        if (acceptedSuffix === incomingPrefix && overlap < incoming.length) {
+          return incoming.slice(overlap).join("");
+        }
+      }
+
+      return text;
     },
     removeStalePreviousWordPrefix: function(text) {
       const staleText = this.stalePreviousWordTexts.find((previousText) =>
