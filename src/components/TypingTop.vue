@@ -175,7 +175,7 @@
     position: relative;
 }
 
-.change_log > .content ::before {
+.change_log > .content::before {
     content: "";
     position: absolute;
     top: 100%;
