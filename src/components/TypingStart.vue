@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <p class="game-status">ただいまのカウント: {{ count }}</p>
+    <p class="game-status">ただいまのカウント {{ count }}</p>
     <p class="game-status">残り時間 {{PassSec}}</p>
     <img class="animal-img" :src="require(`@/assets/${num}.jpg`)">
     <p v-if="$mq === 'pc'">{{ kata }}</p>
@@ -226,6 +226,13 @@ export default {
       this.mobileCompositionWordId = null;
       this.mobileCompositionStartedAt = 0;
       this.mobileCompositionInputHandled = false;
+      // Only process a compositionend that belongs to a composition started
+      // on this input. An unpaired/delayed event can otherwise replay the
+      // mistyped kana after the input has already been replaced.
+      if (compositionWordId === null || compositionStartedAt === 0) {
+        inputElement.value = "";
+        return;
+      }
       if (compositionWordId !== null && compositionWordId !== this.mobileWordId) {
         this.suppressNextMobileInput = null;
         inputElement.value = "";
